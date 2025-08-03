@@ -2,260 +2,33 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tareas del Hogar</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f2f2f2;
-      margin: 2rem;
-    }
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-    button {
-      padding: 0.5rem 1rem;
-      cursor: pointer;
-      border: none;
-      background-color: #1976d2;
-      color: white;
-      border-radius: 4px;
-      font-weight: bold;
-      transition: background-color 0.3s ease;
-    }
-    button:hover {
-      background-color: #115293;
-    }
-    form {
-      display: flex;
-      flex-direction: column;
-      max-width: 400px;
-      margin: 1rem 0;
-      gap: 0.5rem;
-    }
-    input {
-      padding: 0.5rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 1rem;
-    }
-    ul {
-      list-style: none;
-      padding: 0;
-      max-width: 600px;
-    }
-    li {
-      background: white;
-      margin-bottom: 1rem;
-      padding: 1rem;
-      border-radius: 5px;
-      position: relative;
-      box-shadow: 0 2px 5px rgb(0 0 0 / 0.1);
-      transition: box-shadow 0.2s ease;
-    }
-    li:hover {
-      box-shadow: 0 4px 10px rgb(0 0 0 / 0.15);
-    }
-    .btn-borrar {
-      position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
-      background: #f44336;
-      color: white;
-      border: none;
-      border-radius: 3px;
-      cursor: pointer;
-      font-weight: bold;
-      width: 25px;
-      height: 25px;
-      line-height: 20px;
-      text-align: center;
-      padding: 0;
-    }
-    .creador {
-      font-style: italic;
-      color: #555;
-      margin-top: 0.5rem;
-    }
-    #login-error {
-      margin-top: 0.5rem;
-      color: red;
-      font-weight: bold;
-    }
-  </style>
+  <title>Lista de Tareas</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <h1>Tareas del Hogar</h1>
-    <button id="btn-padre">Padre</button>
-  </header>
-
-  <div id="login-section" style="display:none;">
-    <input type="text" id="username" placeholder="Ingrese su nombre" />
-    <input type="password" id="password" placeholder="Contraseña" />
-    <button id="login-btn">Iniciar sesión</button>
-    <div id="login-error"></div>
-  </div>
-
-  <form id="form-tareas" style="display:none;">
-    <input type="text" id="descripcion" placeholder="Descripción de la tarea" required />
-    <input type="text" id="persona" placeholder="Para quién es" required />
-    <input type="date" id="fecha" required />
-    <input type="text" id="creador" placeholder="Quién puso la tarea (ej: Mamá)" required />
-    <button type="submit">Agregar</button>
-  </form>
-
-  <ul id="lista-tareas"></ul>
+  <h1>📋 Lista de Tareas</h1>
+  <div id="tareas"></div>
+  <a href="admin.html">🔒 Ir al Panel de Admin</a>
 
   <script type="module">
-    window.onload = () => {
-      import('https://www.gstatic.com/firebasejs/10.6.1/firebase-app.js').then(({ initializeApp }) => {
-        import('https://www.gstatic.com/firebasejs/10.6.1/firebase-firestore.js').then((firestore) => {
-          const firebaseConfig = {
-            apiKey: "AIzaSyA1LqppWSU8KGVNw9xbkFkU1BJLAw0EdUo",
-            authDomain: "tareas-542bb.firebaseapp.com",
-            projectId: "tareas-542bb",
-            storageBucket: "tareas-542bb.firebasestorage.app",
-            messagingSenderId: "774046945636",
-            appId: "1:774046945636:web:c26868684cfdd9acd66a71",
-            measurementId: "G-JF2V8974BX"
-          };
-          
-          const app = initializeApp(firebaseConfig);
-          const db = firestore.getFirestore(app);
-          const { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy } = firestore;
+    import { db } from './firebase-config.js';
+    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-          const adminUser = 'Admin';
-          const adminPassword = 'familia2025';
+    const tareasContainer = document.getElementById("tareas");
+    const querySnapshot = await getDocs(collection(db, "tareas"));
 
-          let loggedUser = null;
-
-          const btnPadre = document.getElementById('btn-padre');
-          const loginSection = document.getElementById('login-section');
-          const loginBtn = document.getElementById('login-btn');
-          const usernameInput = document.getElementById('username');
-          const passwordInput = document.getElementById('password');
-          const loginError = document.getElementById('login-error');
-
-          const form = document.getElementById('form-tareas');
-          const listaTareas = document.getElementById('lista-tareas');
-
-          btnPadre.addEventListener('click', () => {
-            loginSection.style.display = 'block';
-            btnPadre.style.display = 'none';
-            loginError.textContent = '';
-          });
-
-          loginBtn.addEventListener('click', () => {
-            const user = usernameInput.value.trim();
-            const pass = passwordInput.value;
-
-            if (user !== adminUser) {
-              loginError.textContent = 'Usuario no autorizado.';
-              return;
-            }
-            if (pass !== adminPassword) {
-              loginError.textContent = 'Contraseña incorrecta.';
-              return;
-            }
-
-            loggedUser = user;
-            loginError.textContent = '';
-            loginSection.style.display = 'none';
-            form.style.display = 'flex';
-            cargarTareas();
-            alert(`Bienvenido ${user}, ahora puedes crear y borrar tareas.`);
-          });
-
-          async function cargarTareas() {
-            listaTareas.innerHTML = '';
-            try {
-              const q = query(collection(db, "tareas"), orderBy("fecha"));
-              const querySnapshot = await getDocs(q);
-              querySnapshot.forEach((docSnap) => {
-                const tarea = docSnap.data();
-                tarea.id = docSnap.id;
-                agregarTareaALista(tarea, loggedUser === adminUser);
-              });
-            } catch (error) {
-              console.error('Error al cargar tareas:', error);
-            }
-          }
-
-          function agregarTareaALista(tarea, editable) {
-            const li = document.createElement('li');
-            li.dataset.id = tarea.id || '';
-
-            const info = document.createElement('div');
-            info.className = 'tarea-info';
-            info.innerHTML = `<strong>${tarea.descripcion}</strong><br>Para: ${tarea.persona}<br>Fecha: ${tarea.fecha}`;
-
-            const creador = document.createElement('div');
-            creador.className = 'creador';
-            creador.textContent = `Tarea hecha por: ${tarea.creador}`;
-
-            info.appendChild(creador);
-            li.appendChild(info);
-
-            if (editable) {
-              const btnBorrar = document.createElement('button');
-              btnBorrar.className = 'btn-borrar';
-              btnBorrar.textContent = 'X';
-              btnBorrar.onclick = async () => {
-                if (confirm('¿Eliminar esta tarea?')) {
-                  try {
-                    await deleteDoc(doc(db, "tareas", li.dataset.id));
-                    listaTareas.removeChild(li);
-                  } catch (e) {
-                    alert('Error al borrar tarea.');
-                    console.error(e);
-                  }
-                }
-              };
-              li.appendChild(btnBorrar);
-            }
-
-            listaTareas.appendChild(li);
-          }
-
-          form.addEventListener('submit', async e => {
-            e.preventDefault();
-            if (!loggedUser) {
-              alert('Debes iniciar sesión para crear tareas.');
-              return;
-            }
-
-            const descripcion = document.getElementById('descripcion').value.trim();
-            const persona = document.getElementById('persona').value.trim();
-            const fecha = document.getElementById('fecha').value;
-            const creador = document.getElementById('creador').value.trim();
-
-            if (!descripcion || !persona || !fecha || !creador) return;
-
-            try {
-              const docRef = await addDoc(collection(db, "tareas"), {
-                descripcion,
-                persona,
-                fecha,
-                creador
-              });
-              const tarea = { descripcion, persona, fecha, creador, id: docRef.id };
-              agregarTareaALista(tarea, true);
-              form.reset();
-            } catch (error) {
-              alert('Error al guardar tarea.');
-              console.error(error);
-            }
-          });
-
-          // Carga inicial para público (sin login)
-          cargarTareas();
-        });
-      });
-    };
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      const div = document.createElement("div");
+      div.className = "tarea";
+      div.innerHTML = `
+        <h3>${data.descripcion}</h3>
+        <p><b>Para:</b> ${data.para}</p>
+        <p><b>Fecha:</b> ${data.fecha}</p>
+        <p><b>Hecha por:</b> ${data.autor}</p>
+      `;
+      tareasContainer.appendChild(div);
+    });
   </script>
 </body>
 </html>
