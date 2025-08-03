@@ -1,26 +1,105 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Panel Admin - Tareas del Hogar</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Panel Admin - Tareas del Hogar</title>
+<style>
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    background: #121212;
+    color: white;
+    padding: 20px;
+  }
+  h1, h2 {
+    text-align: center;
+    color: #00bcd4;
+  }
+  .task-card {
+    background: #1e1e1e;
+    border-left: 5px solid #00bcd4;
+    margin: 10px auto;
+    padding: 15px;
+    border-radius: 8px;
+    max-width: 600px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    position: relative;
+    word-wrap: break-word;
+  }
+  .task-card strong {
+    color: #ffcc00;
+  }
+  #loginForm, #adminPanel {
+    display: none;
+    max-width: 400px;
+    margin: 20px auto;
+    background: #1b1b1b;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.7);
+  }
+  input, button {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 5px;
+    border: none;
+    font-size: 1rem;
+    box-sizing: border-box;
+  }
+  input {
+    background: #2a2a2a;
+    color: white;
+    border: 1px solid #00bcd4;
+  }
+  input:focus {
+    outline: none;
+    border-color: #ffcc00;
+  }
+  button {
+    background: #00bcd4;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background: #0097a7;
+  }
+  #logoutBtn {
+    background: #e53935;
+  }
+  #logoutBtn:hover {
+    background: #b71c1c;
+  }
+  #btnSoyPadre {
+    text-align: center;
+    margin-top: 30px;
+  }
+  #userStatus {
+    text-align: center;
+    margin-top: 15px;
+    color: #ffcc00;
+    font-weight: 700;
+  }
+</style>
 </head>
 <body>
-  <h1>📋 Tareas del Hogar - Admin</h1>
+  <h1>📋 Tareas del Hogar - Panel Admin</h1>
 
   <div id="userStatus"></div>
 
-  <div id="btnSoyPadre" style="text-align: center; margin-top: 20px;">
-    <button onclick="showLogin()" id="btnMostrarLogin">👤 Soy Padre</button>
+  <div id="btnSoyPadre">
+    <button id="btnMostrarLogin">👤 Soy Padre</button>
   </div>
 
   <div id="loginForm">
     <h2>🔐 Iniciar sesión</h2>
     <input type="text" id="username" placeholder="Usuario" autocomplete="username"/>
     <input type="password" id="password" placeholder="Contraseña" autocomplete="current-password"/>
-    <button onclick="login()">Entrar</button>
-    <button class="closeLogin" onclick="closeLogin()">Cerrar</button>
+    <button id="btnLogin">Entrar</button>
+    <button id="btnCerrarLogin" style="background:#e53935; margin-top:10px;">Cerrar</button>
   </div>
 
   <div id="adminPanel">
@@ -29,24 +108,118 @@
     <input type="text" id="para" placeholder="¿Para quién es?" autocomplete="off" />
     <input type="text" id="autor" placeholder="¿Quién la escribió?" autocomplete="off" />
     <input type="date" id="fecha" />
-    <button onclick="agregarTarea()">Agregar Tarea</button>
+    <button id="btnAgregarTarea">Agregar Tarea</button>
     <div id="adminTasks"></div>
-    <button id="logoutBtn" onclick="logout()">Salir del Panel</button>
+    <button id="logoutBtn">Salir del Panel</button>
   </div>
 
-  <script type="module">
-    import { showLogin, closeLogin, login, logout, agregarTarea, mostrarTareas } from './main.js';
+<script>
+  // Variables para DOM
+  const btnSoyPadre = document.getElementById('btnSoyPadre');
+  const loginForm = document.getElementById('loginForm');
+  const adminPanel = document.getElementById('adminPanel');
+  const userStatus = document.getElementById('userStatus');
 
-    window.showLogin = showLogin;
-    window.closeLogin = closeLogin;
-    window.login = login;
-    window.logout = logout;
-    window.agregarTarea = agregarTarea;
-    window.mostrarTareas = mostrarTareas;
+  const btnMostrarLogin = document.getElementById('btnMostrarLogin');
+  const btnCerrarLogin = document.getElementById('btnCerrarLogin');
+  const btnLogin = document.getElementById('btnLogin');
+  const btnLogout = document.getElementById('logoutBtn');
+  const btnAgregarTarea = document.getElementById('btnAgregarTarea');
 
-    window.addEventListener('DOMContentLoaded', () => {
-      mostrarTareas(); // Inicial para mostrar lista pública sin botones
+  let isAdmin = false;
+
+  // Mostrar formulario login
+  btnMostrarLogin.addEventListener('click', () => {
+    loginForm.style.display = 'block';
+    btnSoyPadre.style.display = 'none';
+    userStatus.textContent = '';
+  });
+
+  // Cerrar login
+  btnCerrarLogin.addEventListener('click', () => {
+    loginForm.style.display = 'none';
+    if (!isAdmin) btnSoyPadre.style.display = 'block';
+  });
+
+  // Login sencillo
+  btnLogin.addEventListener('click', () => {
+    const user = document.getElementById('username').value.trim();
+    const pass = document.getElementById('password').value.trim();
+    if (user === 'Admin' && pass === 'familia2025') {
+      isAdmin = true;
+      loginForm.style.display = 'none';
+      adminPanel.style.display = 'block';
+      btnSoyPadre.style.display = 'none';
+      userStatus.textContent = `👤 Usuario activo: ${user}`;
+      cargarTareas();
+    } else {
+      alert('Credenciales incorrectas.');
+    }
+  });
+
+  // Logout
+  btnLogout.addEventListener('click', () => {
+    isAdmin = false;
+    adminPanel.style.display = 'none';
+    userStatus.textContent = '';
+    btnSoyPadre.style.display = 'block';
+  });
+
+  // Simulamos base de datos con un array para prueba local (sin Firebase)
+  let tareas = [];
+
+  function mostrarTareas() {
+    const lista = document.getElementById('adminTasks');
+    lista.innerHTML = '';
+    tareas.forEach((tarea, index) => {
+      const div = document.createElement('div');
+      div.className = 'task-card';
+      div.innerHTML = `
+        <strong>${tarea.descripcion}</strong><br>
+        Para: ${tarea.para}<br>
+        Fecha: ${tarea.fecha}<br>
+        Escrito por: ${tarea.autor}
+      `;
+      const btnEliminar = document.createElement('button');
+      btnEliminar.textContent = '×';
+      btnEliminar.title = 'Eliminar tarea';
+      btnEliminar.onclick = () => {
+        if (confirm('¿Seguro quieres eliminar esta tarea?')) {
+          tareas.splice(index, 1);
+          mostrarTareas();
+        }
+      };
+      div.appendChild(btnEliminar);
+      lista.appendChild(div);
     });
-  </script>
+  }
+
+  btnAgregarTarea.addEventListener('click', () => {
+    const descripcion = document.getElementById('descripcion').value.trim();
+    const para = document.getElementById('para').value.trim();
+    const fecha = document.getElementById('fecha').value;
+    const autor = document.getElementById('autor').value.trim();
+
+    if (!descripcion || !para || !fecha || !autor) {
+      alert('Completa todos los campos');
+      return;
+    }
+
+    tareas.push({ descripcion, para, fecha, autor });
+    mostrarTareas();
+
+    // Limpia inputs
+    document.getElementById('descripcion').value = '';
+    document.getElementById('para').value = '';
+    document.getElementById('fecha').value = '';
+    document.getElementById('autor').value = '';
+  });
+
+  // Simular cargar tareas iniciales
+  function cargarTareas() {
+    // Aquí iría código para cargar desde Firebase, pero ahora solo está vacío
+    mostrarTareas();
+  }
+</script>
 </body>
 </html>
