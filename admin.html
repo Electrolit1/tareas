@@ -2,46 +2,104 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Panel de Admin</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Panel de Tareas (Padres)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background-color: #fff0f0;
+    }
+
+    input, textarea {
+      display: block;
+      width: 100%;
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      margin-right: 1rem;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .tarea {
+      border: 1px solid #ccc;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background: white;
+      border-radius: 5px;
+    }
+
+    .delete-btn {
+      background-color: red;
+    }
+  </style>
 </head>
 <body>
-  <h1>✏️ Panel de Administración</h1>
-  <form id="formulario">
-    <input type="text" id="descripcion" placeholder="Descripción de la tarea" required />
-    <input type="text" id="para" placeholder="¿Para quién es?" required />
-    <input type="date" id="fecha" required />
-    <input type="text" id="autor" placeholder="¿Quién la escribió?" required />
-    <button type="submit">Guardar Tarea</button>
-  </form>
-  <a href="index.html">⬅ Volver a ver tareas</a>
+  <h1>Panel de Padres</h1>
+
+  <input type="text" id="titulo" placeholder="Título de la tarea" />
+  <textarea id="descripcion" placeholder="Descripción de la tarea"></textarea>
+  <button onclick="agregarTarea()">Agregar Tarea</button>
+  <hr/>
+
+  <div id="tareasAdmin">Cargando tareas...</div>
 
   <script type="module">
-    import { db } from './firebase-config.js';
-    import { collection, addDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-    const form = document.getElementById("formulario");
+    const firebaseConfig = {
+      apiKey: "AIzaSyA1LqppWSU8KGVNw9xbkFkU1BJLAw0EdUo",
+      authDomain: "tareas-542bb.firebaseapp.com",
+      projectId: "tareas-542bb",
+      storageBucket: "tareas-542bb.appspot.com",
+      messagingSenderId: "774046945636",
+      appId: "1:774046945636:web:c26868684cfdd9acd66a71",
+      measurementId: "G-JF2V8974BX"
+    };
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function cargarTareasAdmin() {
+      const contenedor = document.getElementById("tareasAdmin");
+      contenedor.innerHTML = "";
+      const snapshot = await getDocs(collection(db, "tareas"));
+      snapshot.forEach((docu) => {
+        const data = docu.data();
+        contenedor.innerHTML += `
+          <div class="tarea">
+            <strong>${data.titulo}</strong><br>
+            ${data.descripcion}<br><br>
+            <button class="delete-btn" onclick="eliminarTarea('${docu.id}')">Eliminar</button>
+          </div>`;
+      });
+    }
+
+    window.agregarTarea = async function () {
+      const titulo = document.getElementById("titulo").value;
       const descripcion = document.getElementById("descripcion").value;
-      const para = document.getElementById("para").value;
-      const fecha = document.getElementById("fecha").value;
-      const autor = document.getElementById("autor").value;
+      if (!titulo || !descripcion) return alert("Completa todos los campos");
 
-      try {
-        await addDoc(collection(db, "tareas"), {
-          descripcion,
-          para,
-          fecha,
-          autor
-        });
-        alert("✅ Tarea guardada");
-        form.reset();
-      } catch (e) {
-        alert("❌ Error: " + e.message);
-      }
-    });
+      await addDoc(collection(db, "tareas"), { titulo, descripcion });
+      document.getElementById("titulo").value = "";
+      document.getElementById("descripcion").value = "";
+      cargarTareasAdmin();
+    };
+
+    window.eliminarTarea = async function (id) {
+      await deleteDoc(doc(db, "tareas", id));
+      cargarTareasAdmin();
+    };
+
+    cargarTareasAdmin();
   </script>
 </body>
 </html>
