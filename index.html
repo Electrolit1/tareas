@@ -8,16 +8,16 @@
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      background: #1e1e2f; /* azul oscuro suave */
+      background: #1e1e2f;
       color: #ddd;
       padding: 20px;
     }
     h1, h2 {
       text-align: center;
-      color: #2196f3; /* azul vivo */
+      color: #2196f3;
     }
     .task-card {
-      background: #2c2c44; /* azul grisáceo */
+      background: #2c2c44;
       border-left: 5px solid #2196f3;
       margin: 10px auto;
       padding: 15px;
@@ -28,9 +28,24 @@
       word-wrap: break-word;
       opacity: 0;
       animation: fadeIn 0.4s ease forwards;
+      cursor: default;
+      user-select: none;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    .task-card.confirmed {
+      background-color: #2a4d2a !important;
+      border-left-color: #4caf50 !important;
+      cursor: pointer;
+      user-select: text;
+    }
+    .task-card.not-confirmed {
+      background-color: #4a472a !important;
+      border-left-color: #ffd54f !important;
+      cursor: pointer;
+      user-select: text;
     }
     .task-card strong {
-      color: #ffd54f; /* amarillo suave */
+      color: #ffd54f;
     }
     #loginForm, #adminPanel {
       display: none;
@@ -41,7 +56,7 @@
       border-radius: 8px;
       box-shadow: 0 4px 10px rgba(33,150,243,0.5);
     }
-    input, button {
+    input, button, textarea {
       width: 100%;
       padding: 10px;
       margin: 8px 0;
@@ -50,12 +65,12 @@
       font-size: 1rem;
       box-sizing: border-box;
     }
-    input {
+    input, textarea {
       background: #3a3a57;
       color: #eee;
       border: 1px solid #2196f3;
     }
-    input:focus {
+    input:focus, textarea:focus {
       outline: none;
       border-color: #ffd54f;
     }
@@ -66,7 +81,11 @@
       font-weight: 600;
       transition: background-color 0.3s ease;
     }
-    button:hover {
+    button:disabled {
+      background: #555;
+      cursor: default;
+    }
+    button:hover:enabled {
       background: #1976d2;
     }
     #logoutBtn {
@@ -99,6 +118,7 @@
       cursor: pointer;
       opacity: 0.85;
       transition: opacity 0.2s ease;
+      user-select: none;
     }
     .task-card button:hover {
       opacity: 1;
@@ -109,6 +129,36 @@
       background: #ffd54f;
       color: #121212;
       font-weight: bold;
+    }
+    /* Contenedor para el input + botón enviar sobre la tarea */
+    .input-enviar-container {
+      max-width: 600px;
+      margin: 10px auto 0 auto;
+      padding: 10px 15px;
+      background: #2c2c44;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+      display: flex;
+      gap: 10px;
+      opacity: 0;
+      animation: fadeIn 0.4s ease forwards;
+      max-width: 600px;
+    }
+    .input-enviar-container textarea {
+      flex-grow: 1;
+      height: 40px;
+      resize: vertical;
+      font-size: 0.9rem;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #2196f3;
+      background: #3a3a57;
+      color: #eee;
+    }
+    .input-enviar-container button {
+      width: 100px;
+      padding: 10px 5px;
+      font-weight: 600;
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
@@ -164,6 +214,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // DOM elements
     const btnMostrarLogin = document.getElementById("btnMostrarLogin");
     const loginForm = document.getElementById("loginForm");
     const btnCerrarLogin = document.getElementById("btnCerrarLogin");
@@ -177,6 +228,44 @@
 
     let isAdmin = false;
     let editandoId = null;
+
+    // --- LocalStorage keys
+    const LS_CONFIRMADAS = "tareas_confirmadas";
+    const LS_TEXTOS = "tareas_textos";
+
+    // Leer confirmadas de localStorage
+    function leerConfirmadas() {
+      const data = localStorage.getItem(LS_CONFIRMADAS);
+      return data ? JSON.parse(data) : [];
+    }
+
+    // Guardar confirmadas en localStorage
+    function guardarConfirmadas(arr) {
+      localStorage.setItem(LS_CONFIRMADAS, JSON.stringify(arr));
+    }
+
+    // Leer textos de localStorage
+    function leerTextos() {
+      const data = localStorage.getItem(LS_TEXTOS);
+      return data ? JSON.parse(data) : {};
+    }
+
+    // Guardar textos en localStorage
+    function guardarTextos(obj) {
+      localStorage.setItem(LS_TEXTOS, JSON.stringify(obj));
+    }
+
+    // Alternar confirmación de tarea
+    function toggleConfirmacion(id) {
+      let confirmadas = leerConfirmadas();
+      if (confirmadas.includes(id)) {
+        confirmadas = confirmadas.filter(tid => tid !== id);
+      } else {
+        confirmadas.push(id);
+      }
+      guardarConfirmadas(confirmadas);
+      return confirmadas.includes(id);
+    }
 
     btnMostrarLogin.addEventListener("click", () => {
       loginForm.style.display = "block";
@@ -206,7 +295,7 @@
       isAdmin = false;
       adminPanel.style.display = "none";
       btnSoyPadre.style.display = "block";
-      mostrarTareas(); // Mostrar solo lista pública
+      mostrarTareas(); // Vista pública
       editandoId = null;
       btnAgregarTarea.textContent = "Agregar Tarea";
       limpiarFormulario();
@@ -224,10 +313,11 @@
       }
 
       if (editandoId) {
-        // Editar tarea existente
-        const tareaRef = doc(db, "tareas", editandoId);
-        await updateDoc(tareaRef, { descripcion, para, fecha, autor });
-        alert("✅ Tarea editada con éxito");
+        // Editar tarea
+        await updateDoc(doc(db, "tareas", editandoId), {
+          descripcion, para, fecha, autor
+        });
+        alert("Tarea actualizada.");
         editandoId = null;
         btnAgregarTarea.textContent = "Agregar Tarea";
       } else {
@@ -235,13 +325,12 @@
         await addDoc(collection(db, "tareas"), {
           descripcion, para, fecha, autor
         });
-        alert("✅ Tarea creada con éxito");
+        alert("Tarea agregada con éxito.");
       }
 
+      limpiarFormulario();
       mostrarTareas("adminTasks", true);
       mostrarTareas();
-
-      limpiarFormulario();
     });
 
     function limpiarFormulario() {
@@ -251,17 +340,32 @@
       document.getElementById("autor").value = "";
     }
 
+    // Carga tareas (público o admin)
     async function mostrarTareas(destino = "taskList", mostrarEliminar = false) {
       const lista = document.getElementById(destino);
-      lista.innerHTML = '<p style="text-align:center; color:#2196f3;">Cargando tareas...</p>';
+      lista.innerHTML = "";
+
+      const confirmadas = leerConfirmadas();
+      const textos = leerTextos();
 
       const querySnapshot = await getDocs(collection(db, "tareas"));
-      lista.innerHTML = ""; // limpiar mensaje
-
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
+
+        // Crear contenedor tarea
         const div = document.createElement("div");
         div.className = "task-card";
+
+        // Estado confirmación
+        if (confirmadas.includes(docSnap.id)) {
+          div.classList.add("confirmed");
+          div.title = "Tarea confirmada como hecha. Haz click para desmarcar.";
+        } else {
+          div.classList.add("not-confirmed");
+          div.title = "Tarea no confirmada. Haz click para marcar como hecha.";
+        }
+
+        // Contenido principal tarea
         div.innerHTML = `
           <strong>${data.descripcion}</strong><br>
           Para: ${data.para}<br>
@@ -274,7 +378,9 @@
           const btnEliminar = document.createElement("button");
           btnEliminar.textContent = "×";
           btnEliminar.title = "Eliminar tarea";
-          btnEliminar.onclick = async () => {
+          btnEliminar.classList.add("delete-btn");
+          btnEliminar.onclick = async (e) => {
+            e.stopPropagation();
             if (confirm("¿Seguro quieres eliminar esta tarea?")) {
               await deleteDoc(doc(db, "tareas", docSnap.id));
               mostrarTareas("adminTasks", true);
@@ -287,26 +393,128 @@
           const btnEditar = document.createElement("button");
           btnEditar.textContent = "✎";
           btnEditar.title = "Editar tarea";
-          btnEditar.className = "edit-btn";
-          btnEditar.onclick = () => {
-            // Cargar datos al formulario
+          btnEditar.classList.add("edit-btn");
+          btnEditar.onclick = (e) => {
+            e.stopPropagation();
+            editandoId = docSnap.id;
             document.getElementById("descripcion").value = data.descripcion;
             document.getElementById("para").value = data.para;
             document.getElementById("fecha").value = data.fecha;
             document.getElementById("autor").value = data.autor;
-            editandoId = docSnap.id;
             btnAgregarTarea.textContent = "Guardar Cambios";
             window.scrollTo({ top: 0, behavior: "smooth" });
           };
           div.appendChild(btnEditar);
-        }
+        } else {
+          // Si no es admin, permitir confirmar y añadir texto y botón enviar
 
-        lista.appendChild(div);
+          // Contenedor para el input y botón enviar que se mostrará arriba de la tarea
+          const containerInputEnviar = document.createElement("div");
+          containerInputEnviar.className = "input-enviar-container";
+          containerInputEnviar.style.display = "none"; // Oculto inicialmente
+
+          const textarea = document.createElement("textarea");
+          textarea.placeholder = "Escribe un comentario breve...";
+          textarea.value = textos[docSnap.id] || "";
+          containerInputEnviar.appendChild(textarea);
+
+          const btnEnviar = document.createElement("button");
+          btnEnviar.textContent = "Enviar";
+          btnEnviar.disabled = textarea.value.trim().length === 0;
+          containerInputEnviar.appendChild(btnEnviar);
+
+          // Insertar el contenedor input enviar justo antes de la tarea (en el DOM)
+          lista.appendChild(containerInputEnviar);
+          lista.appendChild(div);
+
+          // Mostrar el texto guardado si existe y la tarea está confirmada
+          if (confirmadas.includes(docSnap.id) && textos[docSnap.id]) {
+            const pTexto = document.createElement("p");
+            pTexto.textContent = textos[docSnap.id];
+            pTexto.style.background = "#3a3a57";
+            pTexto.style.padding = "6px 10px";
+            pTexto.style.borderRadius = "5px";
+            pTexto.style.whiteSpace = "pre-wrap";
+            pTexto.style.margin = "8px 0 0 0";
+            div.appendChild(pTexto);
+          }
+
+          // Función para mostrar/ocultar input + boton
+          function toggleInputEnviar(show) {
+            containerInputEnviar.style.display = show ? "flex" : "none";
+            if (show) textarea.focus();
+          }
+
+          // Manejar clic para confirmar/desconfirmar tarea
+          div.addEventListener("click", () => {
+            const ahoraConfirmada = toggleConfirmacion(docSnap.id);
+
+            if (ahoraConfirmada) {
+              div.classList.remove("not-confirmed");
+              div.classList.add("confirmed");
+              div.title = "Tarea confirmada como hecha. Haz click para desmarcar.";
+
+              toggleInputEnviar(true);
+              textarea.value = textos[docSnap.id] || "";
+              btnEnviar.disabled = textarea.value.trim().length === 0;
+            } else {
+              div.classList.remove("confirmed");
+              div.classList.add("not-confirmed");
+              div.title = "Tarea no confirmada. Haz click para marcar como hecha.";
+
+              toggleInputEnviar(false);
+              // Borrar texto guardado
+              const textosAct = leerTextos();
+              delete textosAct[docSnap.id];
+              guardarTextos(textosAct);
+              // Quitar párrafo con texto si existe
+              const pTexto = div.querySelector("p");
+              if (pTexto) pTexto.remove();
+            }
+          });
+
+          // Activar/desactivar botón enviar según textarea
+          textarea.addEventListener("input", () => {
+            btnEnviar.disabled = textarea.value.trim().length === 0;
+          });
+
+          // Al presionar enviar, guardar texto y mostrarlo bajo la tarea
+          btnEnviar.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const texto = textarea.value.trim();
+            if (!texto) return;
+
+            // Guardar texto en localStorage
+            const textosAct = leerTextos();
+            textosAct[docSnap.id] = texto;
+            guardarTextos(textosAct);
+
+            // Mostrar texto bajo la tarea
+            // Eliminar textarea y botón
+            toggleInputEnviar(false);
+
+            // Actualizar el párrafo o crearlo si no existe
+            let pTexto = div.querySelector("p");
+            if (!pTexto) {
+              pTexto = document.createElement("p");
+              div.appendChild(pTexto);
+            }
+            pTexto.textContent = texto;
+            pTexto.style.background = "#3a3a57";
+            pTexto.style.padding = "6px 10px";
+            pTexto.style.borderRadius = "5px";
+            pTexto.style.whiteSpace = "pre-wrap";
+            pTexto.style.margin = "8px 0 0 0";
+          });
+        }
       });
+
+      if (lista.innerHTML.trim() === "") {
+        lista.innerHTML = '<p style="text-align:center; color:#888;">No hay tareas aún.</p>';
+      }
     }
 
-    // Mostrar lista pública al cargar página
-    mostrarTareas();
+    mostrarTareas(); // Carga inicial pública
   </script>
 </body>
 </html>
