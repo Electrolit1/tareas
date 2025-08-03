@@ -8,36 +8,38 @@
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      background: #121212;
-      color: white;
+      background: #1e1e2f; /* azul oscuro suave */
+      color: #ddd;
       padding: 20px;
     }
     h1, h2 {
       text-align: center;
-      color: #00bcd4;
+      color: #2196f3; /* azul vivo */
     }
     .task-card {
-      background: #1e1e1e;
-      border-left: 5px solid #00bcd4;
+      background: #2c2c44; /* azul grisáceo */
+      border-left: 5px solid #2196f3;
       margin: 10px auto;
       padding: 15px;
       border-radius: 8px;
       max-width: 600px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+      box-shadow: 0 2px 8px rgba(33, 150, 243, 0.5);
       position: relative;
       word-wrap: break-word;
+      opacity: 0;
+      animation: fadeIn 0.4s ease forwards;
     }
     .task-card strong {
-      color: #ffcc00;
+      color: #ffd54f; /* amarillo suave */
     }
     #loginForm, #adminPanel {
       display: none;
       max-width: 400px;
       margin: 20px auto;
-      background: #1b1b1b;
+      background: #2c2c44;
       padding: 20px;
       border-radius: 8px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.7);
+      box-shadow: 0 4px 10px rgba(33,150,243,0.5);
     }
     input, button {
       width: 100%;
@@ -49,23 +51,23 @@
       box-sizing: border-box;
     }
     input {
-      background: #2a2a2a;
-      color: white;
-      border: 1px solid #00bcd4;
+      background: #3a3a57;
+      color: #eee;
+      border: 1px solid #2196f3;
     }
     input:focus {
       outline: none;
-      border-color: #ffcc00;
+      border-color: #ffd54f;
     }
     button {
-      background: #00bcd4;
+      background: #2196f3;
       color: white;
       cursor: pointer;
       font-weight: 600;
       transition: background-color 0.3s ease;
     }
     button:hover {
-      background: #0097a7;
+      background: #1976d2;
     }
     #logoutBtn {
       background: #e53935;
@@ -102,6 +104,16 @@
       opacity: 1;
       background: #b71c1c;
     }
+    .task-card button.edit-btn {
+      right: 45px;
+      background: #ffd54f;
+      color: #121212;
+      font-weight: bold;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
@@ -134,7 +146,10 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+    import {
+      getFirestore, collection, addDoc, getDocs,
+      deleteDoc, doc, updateDoc
+    } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyA1LqppWSU8KGVNw9xbkFkU1BJLAw0EdUo",
@@ -161,6 +176,7 @@
     const adminTasks = document.getElementById("adminTasks");
 
     let isAdmin = false;
+    let editandoId = null;
 
     btnMostrarLogin.addEventListener("click", () => {
       loginForm.style.display = "block";
@@ -191,6 +207,9 @@
       adminPanel.style.display = "none";
       btnSoyPadre.style.display = "block";
       mostrarTareas(); // Mostrar solo lista pública
+      editandoId = null;
+      btnAgregarTarea.textContent = "Agregar Tarea";
+      limpiarFormulario();
     });
 
     btnAgregarTarea.addEventListener("click", async () => {
@@ -204,23 +223,41 @@
         return;
       }
 
-      await addDoc(collection(db, "tareas"), {
-        descripcion, para, fecha, autor
-      });
+      if (editandoId) {
+        // Editar tarea existente
+        const tareaRef = doc(db, "tareas", editandoId);
+        await updateDoc(tareaRef, { descripcion, para, fecha, autor });
+        alert("✅ Tarea editada con éxito");
+        editandoId = null;
+        btnAgregarTarea.textContent = "Agregar Tarea";
+      } else {
+        // Crear nueva tarea
+        await addDoc(collection(db, "tareas"), {
+          descripcion, para, fecha, autor
+        });
+        alert("✅ Tarea creada con éxito");
+      }
 
       mostrarTareas("adminTasks", true);
+      mostrarTareas();
 
-      // Limpiar inputs
+      limpiarFormulario();
+    });
+
+    function limpiarFormulario() {
       document.getElementById("descripcion").value = "";
       document.getElementById("para").value = "";
       document.getElementById("fecha").value = "";
       document.getElementById("autor").value = "";
-    });
+    }
 
     async function mostrarTareas(destino = "taskList", mostrarEliminar = false) {
       const lista = document.getElementById(destino);
-      lista.innerHTML = "";
+      lista.innerHTML = '<p style="text-align:center; color:#2196f3;">Cargando tareas...</p>';
+
       const querySnapshot = await getDocs(collection(db, "tareas"));
+      lista.innerHTML = ""; // limpiar mensaje
+
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
         const div = document.createElement("div");
@@ -231,19 +268,39 @@
           Fecha: ${data.fecha}<br>
           Escrito por: ${data.autor}
         `;
+
         if (mostrarEliminar) {
-          const btn = document.createElement("button");
-          btn.textContent = "×";
-          btn.title = "Eliminar tarea";
-          btn.onclick = async () => {
+          // Botón eliminar
+          const btnEliminar = document.createElement("button");
+          btnEliminar.textContent = "×";
+          btnEliminar.title = "Eliminar tarea";
+          btnEliminar.onclick = async () => {
             if (confirm("¿Seguro quieres eliminar esta tarea?")) {
               await deleteDoc(doc(db, "tareas", docSnap.id));
               mostrarTareas("adminTasks", true);
               mostrarTareas();
             }
           };
-          div.appendChild(btn);
+          div.appendChild(btnEliminar);
+
+          // Botón editar
+          const btnEditar = document.createElement("button");
+          btnEditar.textContent = "✎";
+          btnEditar.title = "Editar tarea";
+          btnEditar.className = "edit-btn";
+          btnEditar.onclick = () => {
+            // Cargar datos al formulario
+            document.getElementById("descripcion").value = data.descripcion;
+            document.getElementById("para").value = data.para;
+            document.getElementById("fecha").value = data.fecha;
+            document.getElementById("autor").value = data.autor;
+            editandoId = docSnap.id;
+            btnAgregarTarea.textContent = "Guardar Cambios";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          };
+          div.appendChild(btnEditar);
         }
+
         lista.appendChild(div);
       });
     }
