@@ -2,104 +2,51 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Panel de Tareas (Padres)</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 2rem;
-      background-color: #fff0f0;
-    }
-
-    input, textarea {
-      display: block;
-      width: 100%;
-      margin-bottom: 1rem;
-      padding: 0.5rem;
-    }
-
-    button {
-      padding: 0.5rem 1rem;
-      margin-right: 1rem;
-      background-color: #28a745;
-      color: white;
-      border: none;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-
-    .tarea {
-      border: 1px solid #ccc;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      background: white;
-      border-radius: 5px;
-    }
-
-    .delete-btn {
-      background-color: red;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Panel Admin - Tareas del Hogar</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Panel de Padres</h1>
+  <h1>📋 Tareas del Hogar - Admin</h1>
 
-  <input type="text" id="titulo" placeholder="Título de la tarea" />
-  <textarea id="descripcion" placeholder="Descripción de la tarea"></textarea>
-  <button onclick="agregarTarea()">Agregar Tarea</button>
-  <hr/>
+  <div id="userStatus"></div>
 
-  <div id="tareasAdmin">Cargando tareas...</div>
+  <div id="btnSoyPadre" style="text-align: center; margin-top: 20px;">
+    <button onclick="showLogin()" id="btnMostrarLogin">👤 Soy Padre</button>
+  </div>
+
+  <div id="loginForm">
+    <h2>🔐 Iniciar sesión</h2>
+    <input type="text" id="username" placeholder="Usuario" autocomplete="username"/>
+    <input type="password" id="password" placeholder="Contraseña" autocomplete="current-password"/>
+    <button onclick="login()">Entrar</button>
+    <button class="closeLogin" onclick="closeLogin()">Cerrar</button>
+  </div>
+
+  <div id="adminPanel">
+    <h2>👨‍👩‍👧‍👦 Panel de Tareas</h2>
+    <input type="text" id="descripcion" placeholder="Descripción de la tarea" autocomplete="off" />
+    <input type="text" id="para" placeholder="¿Para quién es?" autocomplete="off" />
+    <input type="text" id="autor" placeholder="¿Quién la escribió?" autocomplete="off" />
+    <input type="date" id="fecha" />
+    <button onclick="agregarTarea()">Agregar Tarea</button>
+    <div id="adminTasks"></div>
+    <button id="logoutBtn" onclick="logout()">Salir del Panel</button>
+  </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+    import { showLogin, closeLogin, login, logout, agregarTarea, mostrarTareas } from './main.js';
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyA1LqppWSU8KGVNw9xbkFkU1BJLAw0EdUo",
-      authDomain: "tareas-542bb.firebaseapp.com",
-      projectId: "tareas-542bb",
-      storageBucket: "tareas-542bb.appspot.com",
-      messagingSenderId: "774046945636",
-      appId: "1:774046945636:web:c26868684cfdd9acd66a71",
-      measurementId: "G-JF2V8974BX"
-    };
+    window.showLogin = showLogin;
+    window.closeLogin = closeLogin;
+    window.login = login;
+    window.logout = logout;
+    window.agregarTarea = agregarTarea;
+    window.mostrarTareas = mostrarTareas;
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    async function cargarTareasAdmin() {
-      const contenedor = document.getElementById("tareasAdmin");
-      contenedor.innerHTML = "";
-      const snapshot = await getDocs(collection(db, "tareas"));
-      snapshot.forEach((docu) => {
-        const data = docu.data();
-        contenedor.innerHTML += `
-          <div class="tarea">
-            <strong>${data.titulo}</strong><br>
-            ${data.descripcion}<br><br>
-            <button class="delete-btn" onclick="eliminarTarea('${docu.id}')">Eliminar</button>
-          </div>`;
-      });
-    }
-
-    window.agregarTarea = async function () {
-      const titulo = document.getElementById("titulo").value;
-      const descripcion = document.getElementById("descripcion").value;
-      if (!titulo || !descripcion) return alert("Completa todos los campos");
-
-      await addDoc(collection(db, "tareas"), { titulo, descripcion });
-      document.getElementById("titulo").value = "";
-      document.getElementById("descripcion").value = "";
-      cargarTareasAdmin();
-    };
-
-    window.eliminarTarea = async function (id) {
-      await deleteDoc(doc(db, "tareas", id));
-      cargarTareasAdmin();
-    };
-
-    cargarTareasAdmin();
+    window.addEventListener('DOMContentLoaded', () => {
+      mostrarTareas(); // Inicial para mostrar lista pública sin botones
+    });
   </script>
 </body>
 </html>
