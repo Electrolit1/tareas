@@ -35,7 +35,7 @@
     .task-card.confirmed {
       background-color: #2a4d2a !important;
       border-left-color: #4caf50 !important;
-      cursor: pointer;
+      cursor: default;
       user-select: text;
     }
     .task-card.not-confirmed {
@@ -130,7 +130,6 @@
       color: #121212;
       font-weight: bold;
     }
-    /* Contenedor para el input + botón enviar sobre la tarea */
     .input-enviar-container {
       max-width: 600px;
       margin: 10px auto 0 auto;
@@ -154,6 +153,10 @@
       border: 1px solid #2196f3;
       background: #3a3a57;
       color: #eee;
+    }
+    .input-enviar-container textarea:disabled {
+      background: #2a4d2a;
+      color: #a5d6a7;
     }
     .input-enviar-container button {
       width: 100px;
@@ -255,16 +258,17 @@
       localStorage.setItem(LS_TEXTOS, JSON.stringify(obj));
     }
 
-    // Alternar confirmación de tarea
+    // Alternar confirmación de tarea (MODIFICADO para NO permitir desconfirmar)
     function toggleConfirmacion(id) {
       let confirmadas = leerConfirmadas();
       if (confirmadas.includes(id)) {
-        confirmadas = confirmadas.filter(tid => tid !== id);
+        // No permitir desconfirmar
+        return true;
       } else {
         confirmadas.push(id);
+        guardarConfirmadas(confirmadas);
+        return true;
       }
-      guardarConfirmadas(confirmadas);
-      return confirmadas.includes(id);
     }
 
     btnMostrarLogin.addEventListener("click", () => {
@@ -359,54 +363,44 @@
         // Estado confirmación
         if (confirmadas.includes(docSnap.id)) {
           div.classList.add("confirmed");
-          div.title = "Tarea confirmada como hecha. Haz click para desmarcar.";
+          div.title = "Tarea confirmada como hecha. No puede editarse.";
+
+          // Mostrar textarea y botón enviar arriba (deshabilitados)
+          const containerInputEnviar = document.createElement("div");
+          containerInputEnviar.className = "input-enviar-container";
+          containerInputEnviar.style.display = "flex";
+
+          const textarea = document.createElement("textarea");
+          textarea.placeholder = "Escribe un comentario breve...";
+          textarea.value = textos[docSnap.id] || "";
+          textarea.disabled = true;
+          containerInputEnviar.appendChild(textarea);
+
+          const btnEnviar = document.createElement("button");
+          btnEnviar.textContent = "Enviar";
+          btnEnviar.disabled = true;
+          containerInputEnviar.appendChild(btnEnviar);
+
+          lista.appendChild(containerInputEnviar);
+          lista.appendChild(div);
+
+          // Mostrar el texto guardado debajo
+          if (textos[docSnap.id]) {
+            const pTexto = document.createElement("p");
+            pTexto.textContent = textos[docSnap.id];
+            pTexto.style.background = "#3a3a57";
+            pTexto.style.padding = "6px 10px";
+            pTexto.style.borderRadius = "5px";
+            pTexto.style.whiteSpace = "pre-wrap";
+            pTexto.style.margin = "8px 0 0 0";
+            div.appendChild(pTexto);
+          }
+
+          // No se añade listener para cambiar confirmación, ya está bloqueado
+
         } else {
           div.classList.add("not-confirmed");
           div.title = "Tarea no confirmada. Haz click para marcar como hecha.";
-        }
-
-        // Contenido principal tarea
-        div.innerHTML = `
-          <strong>${data.descripcion}</strong><br>
-          Para: ${data.para}<br>
-          Fecha: ${data.fecha}<br>
-          Escrito por: ${data.autor}
-        `;
-
-        if (mostrarEliminar) {
-          // Botón eliminar
-          const btnEliminar = document.createElement("button");
-          btnEliminar.textContent = "×";
-          btnEliminar.title = "Eliminar tarea";
-          btnEliminar.classList.add("delete-btn");
-          btnEliminar.onclick = async (e) => {
-            e.stopPropagation();
-            if (confirm("¿Seguro quieres eliminar esta tarea?")) {
-              await deleteDoc(doc(db, "tareas", docSnap.id));
-              mostrarTareas("adminTasks", true);
-              mostrarTareas();
-            }
-          };
-          div.appendChild(btnEliminar);
-
-          // Botón editar
-          const btnEditar = document.createElement("button");
-          btnEditar.textContent = "✎";
-          btnEditar.title = "Editar tarea";
-          btnEditar.classList.add("edit-btn");
-          btnEditar.onclick = (e) => {
-            e.stopPropagation();
-            editandoId = docSnap.id;
-            document.getElementById("descripcion").value = data.descripcion;
-            document.getElementById("para").value = data.para;
-            document.getElementById("fecha").value = data.fecha;
-            document.getElementById("autor").value = data.autor;
-            btnAgregarTarea.textContent = "Guardar Cambios";
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          };
-          div.appendChild(btnEditar);
-        } else {
-          // Si no es admin, permitir confirmar y añadir texto y botón enviar
 
           // Contenedor para el input y botón enviar que se mostrará arriba de la tarea
           const containerInputEnviar = document.createElement("div");
@@ -423,12 +417,11 @@
           btnEnviar.disabled = textarea.value.trim().length === 0;
           containerInputEnviar.appendChild(btnEnviar);
 
-          // Insertar el contenedor input enviar justo antes de la tarea (en el DOM)
           lista.appendChild(containerInputEnviar);
           lista.appendChild(div);
 
-          // Mostrar el texto guardado si existe y la tarea está confirmada
-          if (confirmadas.includes(docSnap.id) && textos[docSnap.id]) {
+          // Mostrar texto guardado si existe y la tarea no está confirmada
+          if (textos[docSnap.id]) {
             const pTexto = document.createElement("p");
             pTexto.textContent = textos[docSnap.id];
             pTexto.style.background = "#3a3a57";
@@ -439,37 +432,19 @@
             div.appendChild(pTexto);
           }
 
-          // Función para mostrar/ocultar input + boton
-          function toggleInputEnviar(show) {
-            containerInputEnviar.style.display = show ? "flex" : "none";
-            if (show) textarea.focus();
-          }
-
-          // Manejar clic para confirmar/desconfirmar tarea
+          // Manejar clic para confirmar/desconfirmar tarea (solo confirmar)
           div.addEventListener("click", () => {
             const ahoraConfirmada = toggleConfirmacion(docSnap.id);
-
             if (ahoraConfirmada) {
               div.classList.remove("not-confirmed");
               div.classList.add("confirmed");
-              div.title = "Tarea confirmada como hecha. Haz click para desmarcar.";
+              div.title = "Tarea confirmada como hecha. No puede editarse.";
 
-              toggleInputEnviar(true);
+              // Mostrar textarea y boton arriba habilitados para primer comentario
+              containerInputEnviar.style.display = "flex";
               textarea.value = textos[docSnap.id] || "";
+              textarea.disabled = false;
               btnEnviar.disabled = textarea.value.trim().length === 0;
-            } else {
-              div.classList.remove("confirmed");
-              div.classList.add("not-confirmed");
-              div.title = "Tarea no confirmada. Haz click para marcar como hecha.";
-
-              toggleInputEnviar(false);
-              // Borrar texto guardado
-              const textosAct = leerTextos();
-              delete textosAct[docSnap.id];
-              guardarTextos(textosAct);
-              // Quitar párrafo con texto si existe
-              const pTexto = div.querySelector("p");
-              if (pTexto) pTexto.remove();
             }
           });
 
@@ -489,10 +464,6 @@
             textosAct[docSnap.id] = texto;
             guardarTextos(textosAct);
 
-            // Mostrar texto bajo la tarea
-            // Eliminar textarea y botón
-            toggleInputEnviar(false);
-
             // Actualizar el párrafo o crearlo si no existe
             let pTexto = div.querySelector("p");
             if (!pTexto) {
@@ -505,7 +476,77 @@
             pTexto.style.borderRadius = "5px";
             pTexto.style.whiteSpace = "pre-wrap";
             pTexto.style.margin = "8px 0 0 0";
+
+            // Deshabilitar textarea y botón para bloquear más cambios
+            textarea.disabled = true;
+            btnEnviar.disabled = true;
           });
+        }
+
+        if (mostrarEliminar) {
+          // Botón eliminar (admin)
+          const btnEliminar = document.createElement("button");
+          btnEliminar.textContent = "×";
+          btnEliminar.title = "Eliminar tarea";
+          btnEliminar.classList.add("delete-btn");
+          btnEliminar.style.position = "absolute";
+          btnEliminar.style.top = "10px";
+          btnEliminar.style.right = "10px";
+          btnEliminar.style.background = "#e53935";
+          btnEliminar.style.color = "#fff";
+          btnEliminar.style.borderRadius = "50%";
+          btnEliminar.style.width = "30px";
+          btnEliminar.style.height = "30px";
+          btnEliminar.style.border = "none";
+          btnEliminar.style.cursor = "pointer";
+          btnEliminar.style.fontWeight = "bold";
+          btnEliminar.style.opacity = "0.85";
+          btnEliminar.style.transition = "opacity 0.2s ease";
+          btnEliminar.onmouseenter = () => btnEliminar.style.opacity = "1";
+          btnEliminar.onmouseleave = () => btnEliminar.style.opacity = "0.85";
+
+          btnEliminar.onclick = async (e) => {
+            e.stopPropagation();
+            if (confirm("¿Seguro quieres eliminar esta tarea?")) {
+              await deleteDoc(doc(db, "tareas", docSnap.id));
+              mostrarTareas("adminTasks", true);
+              mostrarTareas();
+            }
+          };
+          div.appendChild(btnEliminar);
+
+          // Botón editar (admin)
+          const btnEditar = document.createElement("button");
+          btnEditar.textContent = "✎";
+          btnEditar.title = "Editar tarea";
+          btnEditar.classList.add("edit-btn");
+          btnEditar.style.position = "absolute";
+          btnEditar.style.top = "10px";
+          btnEditar.style.right = "45px";
+          btnEditar.style.background = "#ffd54f";
+          btnEditar.style.color = "#121212";
+          btnEditar.style.borderRadius = "50%";
+          btnEditar.style.width = "30px";
+          btnEditar.style.height = "30px";
+          btnEditar.style.border = "none";
+          btnEditar.style.cursor = "pointer";
+          btnEditar.style.fontWeight = "bold";
+          btnEditar.style.opacity = "0.85";
+          btnEditar.style.transition = "opacity 0.2s ease";
+          btnEditar.onmouseenter = () => btnEditar.style.opacity = "1";
+          btnEditar.onmouseleave = () => btnEditar.style.opacity = "0.85";
+
+          btnEditar.onclick = (e) => {
+            e.stopPropagation();
+            editandoId = docSnap.id;
+            document.getElementById("descripcion").value = data.descripcion;
+            document.getElementById("para").value = data.para;
+            document.getElementById("fecha").value = data.fecha;
+            document.getElementById("autor").value = data.autor;
+            btnAgregarTarea.textContent = "Guardar Cambios";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          };
+          div.appendChild(btnEditar);
         }
       });
 
