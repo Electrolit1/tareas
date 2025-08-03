@@ -95,11 +95,14 @@
       margin-bottom: 0 !important;
       overflow: hidden;
       transition: opacity 0.4s ease, transform 0.4s ease;
+      display: none !important;
     }
 
     /* Lista de tareas pública */
     #taskList {
       min-height: 150px;
+      display: flex;
+      flex-direction: column;
     }
 
     /* Tareas individuales */
@@ -432,7 +435,7 @@
     <button id="btnMostrarLogin" aria-expanded="false" aria-controls="loginForm" aria-haspopup="dialog">👤 Soy Padre</button>
   </div>
 
-  <form id="loginForm" role="dialog" aria-modal="true" aria-labelledby="loginTitle" tabindex="-1" onsubmit="return false;">
+  <form id="loginForm" role="dialog" aria-modal="true" aria-labelledby="loginTitle" tabindex="-1">
     <h2 id="loginTitle">🔐 Iniciar sesión</h2>
     <input type="text" id="username" placeholder="Usuario" autocomplete="username" aria-required="true" aria-label="Usuario" />
     <input type="password" id="password" placeholder="Contraseña" autocomplete="current-password" aria-required="true" aria-label="Contraseña" />
@@ -446,26 +449,34 @@
     <input type="text" id="para" placeholder="¿Para quién es?" aria-label="Para quién es la tarea" required />
     <input type="text" id="autor" placeholder="¿Quién la escribió?" aria-label="Autor de la tarea" required />
     <input type="date" id="fecha" aria-label="Fecha de la tarea" required />
-    <button id="btnAgregarTarea">Agregar Tarea</button>
+    <button id="btnAgregarTarea" type="button">Agregar Tarea</button>
     <div id="adminTasks" aria-live="polite" aria-label="Lista de tareas para administración"></div>
-    <button id="logoutBtn" type="button">Salir del Panel</button>
+    <button id="logoutBtn" type="button" aria-label="Cerrar sesión">Salir</button>
   </section>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
     import {
-      getFirestore, collection, addDoc, getDocs,
-      deleteDoc, doc, updateDoc
+      initializeApp
+    } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      addDoc,
+      deleteDoc,
+      doc,
+      updateDoc
     } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-    // Firebase config - pon tus datos aquí
+    // Configuración de Firebase
     const firebaseConfig = {
-      // ...tu configuración firebase...
+      // Pega aquí tu configuración Firebase
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // Referencias a elementos
     const taskList = document.getElementById("taskList");
     const adminPanel = document.getElementById("adminPanel");
     const adminTasks = document.getElementById("adminTasks");
@@ -480,7 +491,7 @@
     let isAdmin = false;
     let editandoId = null;
 
-    // Crear tarjeta tarea
+    // Función para crear tarjeta de tarea
     function crearTarjetaTarea(tarea, isAdminView = false) {
       const card = document.createElement("article");
       card.className = "task-card " + (tarea.confirmada ? "confirmed" : "not-confirmed");
@@ -489,7 +500,6 @@
       card.setAttribute("aria-label", `Tarea: ${tarea.descripcion}, para ${tarea.para}, autor: ${tarea.autor}, fecha: ${tarea.fecha}`);
       card.title = tarea.confirmada ? "Tarea confirmada" : "Haz clic para confirmar";
 
-      // Descripción con negrita para ciertas partes
       card.innerHTML = `
         <strong>${tarea.descripcion}</strong>
         <div class="task-info">
@@ -499,23 +509,26 @@
         </div>
       `;
 
-      // Animación flash al agregar o editar
       card.classList.add("flash");
       setTimeout(() => card.classList.remove("flash"), 1200);
 
       if (!tarea.confirmada && !isAdminView) {
         card.style.cursor = "pointer";
-        card.addEventListener("click", () => {
-          tarea.confirmada = true;
-          card.classList.remove("not-confirmed");
-          card.classList.add("confirmed");
-          card.title = "Tarea confirmada";
-          // Aquí podrías actualizar en Firestore si quieres
+        card.addEventListener("click", async () => {
+          try {
+            const tareaRef = doc(db, "tareas", tarea.id);
+            await updateDoc(tareaRef, { confirmada: true });
+            card.classList.remove("not-confirmed");
+            card.classList.add("confirmed");
+            card.title = "Tarea confirmada";
+          } catch (e) {
+            alert("Error al confirmar la tarea.");
+            console.error(e);
+          }
         });
       }
 
       if (isAdminView) {
-        // Botón eliminar
         const btnEliminar = document.createElement("button");
         btnEliminar.className = "delete-btn";
         btnEliminar.title = "Eliminar tarea";
@@ -524,7 +537,6 @@
         btnEliminar.addEventListener("click", () => eliminarTarea(tarea.id));
         card.appendChild(btnEliminar);
 
-        // Botón editar
         const btnEditar = document.createElement("button");
         btnEditar.className = "edit-btn";
         btnEditar.title = "Editar tarea";
@@ -650,20 +662,19 @@
       document.getElementById("fecha").value = tarea.fecha;
       editandoId = tarea.id;
       btnAgregarTarea.textContent = "Guardar Cambios";
-      // Animación para enfocar el panel admin
       adminPanel.scrollIntoView({ behavior: "smooth" });
     }
 
     // Mostrar/ocultar login
     btnMostrarLogin.addEventListener("click", () => {
-      const visible = loginForm.classList.contains("show");
-      if (visible) {
+      const isVisible = loginForm.classList.contains("show");
+      if (isVisible) {
         loginForm.classList.remove("show");
         btnMostrarLogin.setAttribute("aria-expanded", "false");
       } else {
         loginForm.classList.add("show");
         btnMostrarLogin.setAttribute("aria-expanded", "true");
-        loginForm.querySelector("#username").focus();
+        document.getElementById("username").focus();
       }
     });
 
@@ -674,7 +685,7 @@
       limpiarCamposLogin();
     });
 
-    // Salir del panel
+    // Salir del panel admin
     logoutBtn.addEventListener("click", () => {
       isAdmin = false;
       adminPanel.classList.remove("show");
@@ -701,8 +712,9 @@
       btnAgregarTarea.textContent = "Agregar Tarea";
     }
 
-    // Login
-    btnLogin.addEventListener("click", () => {
+    // Login con submit de formulario
+    loginForm.addEventListener("submit", e => {
+      e.preventDefault();
       const user = document.getElementById("username").value.trim();
       const pass = document.getElementById("password").value.trim();
 
