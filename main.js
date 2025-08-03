@@ -1,62 +1,95 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+// main.js
+import { db } from "./firebase-config.js";
+import { collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyA1LqppWSU8KGVNw9xbkFkU1BJLAw0EdUo",
-  authDomain: "tareas-542bb.firebaseapp.com",
-  projectId: "tareas-542bb",
-  storageBucket: "tareas-542bb.appspot.com",
-  messagingSenderId: "774046945636",
-  appId: "1:774046945636:web:c26868684cfdd9acd66a71",
-  measurementId: "G-JF2V8974BX"
-};
+let isAdmin = false;
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// Mostrar tareas
-async function cargarTareas() {
-  const tareasRef = collection(db, "tareas");
-  const snapshot = await getDocs(tareasRef);
-  const lista = document.getElementById("taskList");
+export async function mostrarTareas(destino = "taskList", mostrarEliminar = false) {
+  const lista = document.getElementById(destino);
   lista.innerHTML = "";
-
-  snapshot.forEach((doc) => {
-    const data = doc.data();
-    lista.innerHTML += `
-      <div class="task">
-        <b>Tarea:</b> ${data.tarea}<br>
-        <b>Para:</b> ${data.para}<br>
-        <b>Fecha:</b> ${data.fecha}<br>
-        <b>Hecha por:</b> ${data.autor}
-      </div>
+  const querySnapshot = await getDocs(collection(db, "tareas"));
+  querySnapshot.forEach((docSnap) => {
+    const data = docSnap.data();
+    const div = document.createElement("div");
+    div.className = "task-card";
+    div.innerHTML = `
+      <strong>${data.descripcion}</strong><br>
+      Para: ${data.para}<br>
+      Fecha: ${data.fecha}<br>
+      Escrito por: ${data.autor}
     `;
+    if (mostrarEliminar) {
+      const btn = document.createElement("button");
+      btn.textContent = "×";
+      btn.title = "Eliminar tarea";
+      btn.onclick = async () => {
+        if (confirm("¿Seguro quieres eliminar esta tarea?")) {
+          await deleteDoc(doc(db, "tareas", docSnap.id));
+          mostrarTareas("adminTasks", true);
+          mostrarTareas();
+        }
+      };
+      div.appendChild(btn);
+    }
+    lista.appendChild(div);
   });
 }
 
-window.guardarTarea = async () => {
-  const tarea = document.getElementById("tarea").value;
-  const para = document.getElementById("para").value;
-  const autor = document.getElementById("autor").value;
+export async function agregarTarea() {
+  const descripcion = document.getElementById("descripcion").value.trim();
+  const para = document.getElementById("para").value.trim();
   const fecha = document.getElementById("fecha").value;
+  const autor = document.getElementById("autor").value.trim();
 
-  if (!tarea || !para || !autor || !fecha) return alert("Completa todos los campos");
+  if (!descripcion || !para || !fecha || !autor) {
+    alert("Completa todos los campos");
+    return;
+  }
 
-  await addDoc(collection(db, "tareas"), { tarea, para, autor, fecha });
-  alert("Tarea guardada");
-  cargarTareas();
+  await addDoc(collection(db, "tareas"), {
+    descripcion, para, fecha, autor
+  });
+
+  mostrarTareas("adminTasks", true);
+  mostrarTareas();
+
+  document.getElementById("descripcion").value = "";
+  document.getElementById("para").value = "";
+  document.getElementById("fecha").value = "";
+  document.getElementById("autor").value = "";
 }
 
-// Admin login simple
-window.login = () => {
-  const user = document.getElementById("username").value;
-  const pass = document.getElementById("password").value;
-  if (user === "admin" && pass === "1234") {
-    document.querySelector(".add-task").classList.remove("hidden");
-    document.querySelector(".admin-login").classList.add("hidden");
-  } else {
-    alert("Usuario o contraseña incorrecta");
-  }
-};
+export function showLogin() {
+  document.getElementById("loginForm").style.display = "block";
+  document.getElementById("btnSoyPadre").style.display = "none";
+  document.getElementById("userStatus").textContent = "";
+}
 
-cargarTareas();
+export function closeLogin() {
+  document.getElementById("loginForm").style.display = "none";
+  if (!isAdmin) {
+    document.getElementById("btnSoyPadre").style.display = "block";
+  }
+}
+
+export function login() {
+  const user = document.getElementById("username").value.trim();
+  const pass = document.getElementById("password").value.trim();
+  if (user === "Admin" && pass === "familia2025") {
+    isAdmin = true;
+    document.getElementById("loginForm").style.display = "none";
+    document.getElementById("adminPanel").style.display = "block";
+    document.getElementById("btnSoyPadre").style.display = "none";
+    document.getElementById("userStatus").textContent = `👤 Usuario activo: ${user}`;
+    mostrarTareas("adminTasks", true);
+  } else {
+    alert("Credenciales incorrectas.");
+  }
+}
+
+export function logout() {
+  isAdmin = false;
+  document.getElementById("adminPanel").style.display = "none";
+  document.getElementById("userStatus").textContent = "";
+  document.getElementById("btnSoyPadre").style.display = "block";
+}
