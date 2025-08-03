@@ -31,6 +31,7 @@
       cursor: default;
       user-select: none;
       transition: background-color 0.3s ease, border-color 0.3s ease;
+      white-space: pre-wrap;
     }
     .task-card.confirmed {
       background-color: #2a4d2a !important;
@@ -167,6 +168,11 @@
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    .task-info {
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      color: #bbb;
+    }
   </style>
 </head>
 <body>
@@ -258,12 +264,11 @@
       localStorage.setItem(LS_TEXTOS, JSON.stringify(obj));
     }
 
-    // Alternar confirmación de tarea (MODIFICADO para NO permitir desconfirmar)
+    // Alternar confirmación de tarea (solo permite confirmar, no desconfirmar)
     function toggleConfirmacion(id) {
       let confirmadas = leerConfirmadas();
       if (confirmadas.includes(id)) {
-        // No permitir desconfirmar
-        return true;
+        return true; // ya confirmada
       } else {
         confirmadas.push(id);
         guardarConfirmadas(confirmadas);
@@ -344,7 +349,7 @@
       document.getElementById("autor").value = "";
     }
 
-    // Carga tareas (público o admin)
+    // Función para crear y mostrar las tareas
     async function mostrarTareas(destino = "taskList", mostrarEliminar = false) {
       const lista = document.getElementById(destino);
       lista.innerHTML = "";
@@ -353,6 +358,12 @@
       const textos = leerTextos();
 
       const querySnapshot = await getDocs(collection(db, "tareas"));
+
+      if (querySnapshot.empty) {
+        lista.innerHTML = '<p style="text-align:center; color:#888;">No hay tareas aún.</p>';
+        return;
+      }
+
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
 
@@ -360,7 +371,13 @@
         const div = document.createElement("div");
         div.className = "task-card";
 
-        // Estado confirmación
+        // Contenido visible de la tarea
+        div.innerHTML = `
+          <strong>Descripción:</strong> ${data.descripcion}<br>
+          <span class="task-info"><strong>Para:</strong> ${data.para} | <strong>Fecha:</strong> ${data.fecha} | <strong>Escrito por:</strong> ${data.autor}</span>
+        `;
+
+        // Confirmación
         if (confirmadas.includes(docSnap.id)) {
           div.classList.add("confirmed");
           div.title = "Tarea confirmada como hecha. No puede editarse.";
@@ -396,8 +413,6 @@
             div.appendChild(pTexto);
           }
 
-          // No se añade listener para cambiar confirmación, ya está bloqueado
-
         } else {
           div.classList.add("not-confirmed");
           div.title = "Tarea no confirmada. Haz click para marcar como hecha.";
@@ -432,7 +447,7 @@
             div.appendChild(pTexto);
           }
 
-          // Manejar clic para confirmar/desconfirmar tarea (solo confirmar)
+          // Manejar clic para confirmar tarea (solo confirmar)
           div.addEventListener("click", () => {
             const ahoraConfirmada = toggleConfirmacion(docSnap.id);
             if (ahoraConfirmada) {
@@ -440,7 +455,7 @@
               div.classList.add("confirmed");
               div.title = "Tarea confirmada como hecha. No puede editarse.";
 
-              // Mostrar textarea y boton arriba habilitados para primer comentario
+              // Mostrar textarea y botón arriba habilitados para primer comentario
               containerInputEnviar.style.display = "flex";
               textarea.value = textos[docSnap.id] || "";
               textarea.disabled = false;
@@ -549,10 +564,6 @@
           div.appendChild(btnEditar);
         }
       });
-
-      if (lista.innerHTML.trim() === "") {
-        lista.innerHTML = '<p style="text-align:center; color:#888;">No hay tareas aún.</p>';
-      }
     }
 
     mostrarTareas(); // Carga inicial pública
