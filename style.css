@@ -1,1 +1,30 @@
-style.css
+body {
+  font-family: sans-serif;
+  padding: 20px;
+  background: #f0f0f0;
+}
+h1 {
+  text-align: center;
+}
+form, .tarea {
+  background: white;
+  padding: 15px;
+  margin: 10px auto;
+  border-radius: 10px;
+  max-width: 500px;
+}
+input, button {
+  display: block;
+  margin: 10px 0;
+  padding: 10px;
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+a {
+  display: block;
+  text-align: center;
+  margin-top: 20px;
+  text-decoration: none;
+  font-weight: bold;
+}
