@@ -1,1 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Panel de Admin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>✏️ Panel de Administración</h1>
+  <form id="formulario">
+    <input type="text" id="descripcion" placeholder="Descripción de la tarea" required />
+    <input type="text" id="para" placeholder="¿Para quién es?" required />
+    <input type="date" id="fecha" required />
+    <input type="text" id="autor" placeholder="¿Quién la escribió?" required />
+    <button type="submit">Guardar Tarea</button>
+  </form>
+  <a href="index.html">⬅ Volver a ver tareas</a>
 
+  <script type="module">
+    import { db } from './firebase-config.js';
+    import { collection, addDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+    const form = document.getElementById("formulario");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const descripcion = document.getElementById("descripcion").value;
+      const para = document.getElementById("para").value;
+      const fecha = document.getElementById("fecha").value;
+      const autor = document.getElementById("autor").value;
+
+      try {
+        await addDoc(collection(db, "tareas"), {
+          descripcion,
+          para,
+          fecha,
+          autor
+        });
+        alert("✅ Tarea guardada");
+        form.reset();
+      } catch (e) {
+        alert("❌ Error: " + e.message);
+      }
+    });
+  </script>
+</body>
+</html>
