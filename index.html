@@ -3,205 +3,333 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tareas del Hogar</title>
+  <title>Tareas del Hogar - Profesional</title>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      background: #1e1e2f;
-      color: #ddd;
-      padding: 20px;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+    * {
+      box-sizing: border-box;
     }
-    h1, h2 {
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      background: #121521;
+      color: #e0e6f0;
+      padding: 20px 15px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      font-weight: 700;
+      font-size: 2.5rem;
+      margin-bottom: 5px;
+      color: #4fc3f7;
+      text-shadow: 0 0 8px #4fc3f7;
+    }
+    h2 {
+      font-weight: 600;
+      color: #90caf9;
+      margin-bottom: 20px;
       text-align: center;
-      color: #2196f3;
+      user-select: none;
+    }
+    #taskList, #adminTasks {
+      width: 100%;
+      max-width: 720px;
+      margin: 0 auto 30px auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
     }
     .task-card {
-      background: #2c2c44;
-      border-left: 5px solid #2196f3;
-      margin: 10px auto;
-      padding: 15px;
-      border-radius: 8px;
-      max-width: 600px;
-      box-shadow: 0 2px 8px rgba(33, 150, 243, 0.5);
+      background: #1f2738;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(15, 32, 57, 0.6);
+      padding: 18px 24px;
       position: relative;
-      word-wrap: break-word;
-      opacity: 0;
-      animation: fadeIn 0.4s ease forwards;
       cursor: default;
       user-select: none;
-      transition: background-color 0.3s ease, border-color 0.3s ease;
+      opacity: 0;
+      animation: fadeInUp 0.45s forwards;
+      transition: background-color 0.3s ease, border-left-color 0.3s ease;
+      border-left: 6px solid transparent;
+      word-wrap: break-word;
       white-space: pre-wrap;
     }
     .task-card.confirmed {
-      background-color: #2a4d2a !important;
-      border-left-color: #4caf50 !important;
+      border-left-color: #43a047;
+      background-color: #263a2e;
       cursor: default;
       user-select: text;
     }
     .task-card.not-confirmed {
-      background-color: #4a472a !important;
-      border-left-color: #ffd54f !important;
+      border-left-color: #fbc02d;
+      background-color: #3a3c4e;
       cursor: pointer;
       user-select: text;
     }
-    .task-card strong {
-      color: #ffd54f;
-    }
-    #loginForm, #adminPanel {
-      display: none;
-      max-width: 400px;
-      margin: 20px auto;
-      background: #2c2c44;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 10px rgba(33,150,243,0.5);
-    }
-    input, button, textarea {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      border-radius: 5px;
-      border: none;
-      font-size: 1rem;
-      box-sizing: border-box;
-    }
-    input, textarea {
-      background: #3a3a57;
-      color: #eee;
-      border: 1px solid #2196f3;
-    }
-    input:focus, textarea:focus {
-      outline: none;
-      border-color: #ffd54f;
-    }
-    button {
-      background: #2196f3;
-      color: white;
-      cursor: pointer;
-      font-weight: 600;
-      transition: background-color 0.3s ease;
-    }
-    button:disabled {
-      background: #555;
-      cursor: default;
-    }
-    button:hover:enabled {
-      background: #1976d2;
-    }
-    #logoutBtn {
-      background: #e53935;
-      margin-top: 15px;
-    }
-    #logoutBtn:hover {
-      background: #b71c1c;
-    }
-    #btnSoyPadre {
-      text-align: center;
-      margin-top: 30px;
-    }
-    #btnSoyPadre button {
-      width: auto;
-      padding: 12px 25px;
+    .task-desc {
       font-size: 1.1rem;
+      font-weight: 600;
+      color: #e3f2fd;
+      margin-bottom: 6px;
     }
-    .task-card button {
+    .task-meta {
+      font-size: 0.9rem;
+      color: #90a4ae;
+      margin-bottom: 10px;
+      user-select: text;
+    }
+    .task-comment {
+      font-size: 0.95rem;
+      background-color: #2d344a;
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #cfd8dc;
+      white-space: pre-wrap;
+      user-select: text;
+      box-shadow: inset 0 0 4px #90caf9aa;
+      margin-top: 10px;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+    .btn-delete, .btn-edit {
       position: absolute;
-      top: 10px;
-      right: 10px;
-      background: #e53935;
+      top: 14px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
-      width: 30px;
-      height: 30px;
-      color: white;
       border: none;
-      font-weight: bold;
+      font-weight: 700;
+      font-size: 18px;
+      color: white;
       cursor: pointer;
-      opacity: 0.85;
-      transition: opacity 0.2s ease;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       user-select: none;
+      user-drag: none;
     }
-    .task-card button:hover {
-      opacity: 1;
-      background: #b71c1c;
+    .btn-delete {
+      right: 14px;
+      background-color: #e53935;
     }
-    .task-card button.edit-btn {
-      right: 45px;
-      background: #ffd54f;
-      color: #121212;
-      font-weight: bold;
+    .btn-delete:hover {
+      background-color: #b71c1c;
+    }
+    .btn-edit {
+      right: 56px;
+      background-color: #fbc02d;
+      color: #212121;
+    }
+    .btn-edit:hover {
+      background-color: #f9a825;
     }
     .input-enviar-container {
-      max-width: 600px;
-      margin: 10px auto 0 auto;
-      padding: 10px 15px;
-      background: #2c2c44;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+      max-width: 720px;
+      margin: 0 auto 10px auto;
+      background: #1f2738;
+      padding: 12px 18px;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(15, 32, 57, 0.6);
       display: flex;
-      gap: 10px;
+      gap: 15px;
       opacity: 0;
-      animation: fadeIn 0.4s ease forwards;
-      max-width: 600px;
+      animation: fadeInUp 0.45s forwards;
     }
     .input-enviar-container textarea {
       flex-grow: 1;
-      height: 40px;
       resize: vertical;
-      font-size: 0.9rem;
-      padding: 8px;
-      border-radius: 5px;
-      border: 1px solid #2196f3;
-      background: #3a3a57;
-      color: #eee;
+      min-height: 44px;
+      max-height: 120px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1.8px solid #4fc3f7;
+      background: #2c344b;
+      color: #e3f2fd;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: border-color 0.3s ease;
+      font-family: 'Inter', sans-serif;
+    }
+    .input-enviar-container textarea:focus:not(:disabled) {
+      border-color: #81d4fa;
+      outline: none;
     }
     .input-enviar-container textarea:disabled {
-      background: #2a4d2a;
+      background: #263a2e;
       color: #a5d6a7;
+      cursor: not-allowed;
     }
     .input-enviar-container button {
-      width: 100px;
-      padding: 10px 5px;
+      background-color: #4fc3f7;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 22px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #121212;
+      cursor: pointer;
+      box-shadow: 0 6px 14px #29b6f6cc;
+      transition: background-color 0.25s ease;
+      user-select: none;
+    }
+    .input-enviar-container button:disabled {
+      background-color: #3a6070;
+      cursor: default;
+      box-shadow: none;
+      color: #a0becf;
+    }
+    .input-enviar-container button:hover:not(:disabled) {
+      background-color: #29b6f6;
+      box-shadow: 0 8px 20px #29b6f6dd;
+    }
+    #btnSoyPadre button,
+    #btnMostrarLogin,
+    #btnLogin,
+    #btnCerrarLogin,
+    #logoutBtn,
+    #btnAgregarTarea {
+      font-family: 'Inter', sans-serif;
       font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      padding: 14px 28px;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 6px 18px rgba(15, 32, 57, 0.6);
+      font-size: 1.1rem;
+      margin: 10px 0;
+      display: block;
+      width: 100%;
+      max-width: 280px;
+      text-align: center;
+      color: #121212;
+      background-color: #4fc3f7;
+      text-shadow: 0 0 3px #039be5;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    #btnSoyPadre button:hover,
+    #btnMostrarLogin:hover,
+    #btnLogin:hover,
+    #btnAgregarTarea:hover {
+      background-color: #29b6f6;
+      box-shadow: 0 8px 24px #29b6f6bb;
+      color: #0d0d0d;
     }
-    .task-info {
-      margin-bottom: 8px;
-      font-size: 0.9rem;
-      color: #bbb;
+    #btnCerrarLogin,
+    #logoutBtn {
+      background-color: #e53935;
+      color: white;
+      max-width: 280px;
+      margin: 10px auto 0 auto;
+      text-shadow: none;
+    }
+    #btnCerrarLogin:hover,
+    #logoutBtn:hover {
+      background-color: #b71c1c;
+      box-shadow: 0 6px 22px #b71c1cbb;
+    }
+    #loginForm, #adminPanel {
+      background: #1f2738;
+      padding: 30px 30px 40px 30px;
+      border-radius: 15px;
+      box-shadow: 0 8px 24px rgba(15, 32, 57, 0.75);
+      width: 100%;
+      max-width: 460px;
+      margin: 20px auto 40px auto;
+      display: none;
+      flex-direction: column;
+      user-select: none;
+    }
+    #loginForm input,
+    #adminPanel input {
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 1.05rem;
+      padding: 14px 16px;
+      margin: 12px 0;
+      border-radius: 12px;
+      border: 2px solid #4fc3f7;
+      background: #2a344d;
+      color: #e3f2fd;
+      transition: border-color 0.3s ease;
+    }
+    #loginForm input:focus,
+    #adminPanel input:focus {
+      border-color: #81d4fa;
+      outline: none;
+    }
+    #adminPanel input[type="date"] {
+      padding-left: 12px;
+    }
+    @keyframes fadeInUp {
+      0% {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 15px 10px;
+      }
+      #loginForm, #adminPanel, #taskList, #adminTasks {
+        max-width: 100%;
+      }
+      .task-card {
+        padding: 15px 18px;
+      }
+      .btn-delete, .btn-edit {
+        top: 10px;
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
+        right: 12px;
+      }
+      .btn-edit {
+        right: 44px;
+      }
+      .input-enviar-container button {
+        width: 90px;
+        padding: 8px 15px;
+        font-size: 1rem;
+      }
     }
   </style>
 </head>
 <body>
   <h1>📋 Tareas del Hogar</h1>
+  <div id="taskList" aria-live="polite" aria-label="Lista de tareas"></div>
 
-  <div id="taskList"></div>
-
-  <div id="btnSoyPadre" style="text-align:center; margin-top: 20px;">
-    <button id="btnMostrarLogin">👤 Soy Padre</button>
+  <div id="btnSoyPadre" style="text-align:center;">
+    <button id="btnMostrarLogin" aria-haspopup="dialog" aria-controls="loginForm" aria-expanded="false">👤 Soy Padre</button>
   </div>
 
-  <div id="loginForm">
-    <h2>🔐 Iniciar sesión</h2>
-    <input type="text" id="username" placeholder="Usuario" autocomplete="username" />
-    <input type="password" id="password" placeholder="Contraseña" autocomplete="current-password" />
-    <button id="btnLogin">Entrar</button>
-    <button id="btnCerrarLogin" style="background:#e53935; margin-top:10px;">Cerrar</button>
-  </div>
+  <section id="loginForm" role="dialog" aria-modal="true" aria-labelledby="loginTitle" tabindex="-1">
+    <h2 id="loginTitle">🔐 Iniciar sesión</h2>
+    <input type="text" id="username" placeholder="Usuario" autocomplete="username" aria-label="Usuario" />
+    <input type="password" id="password" placeholder="Contraseña" autocomplete="current-password" aria-label="Contraseña" />
+    <button id="btnLogin" aria-describedby="loginTitle">Entrar</button>
+    <button id="btnCerrarLogin" aria-label="Cerrar formulario de login">Cerrar</button>
+  </section>
 
-  <div id="adminPanel">
+  <section id="adminPanel" aria-live="polite" aria-label="Panel de administración de tareas" tabindex="-1">
     <h2>👨‍👩‍👧‍👦 Panel de Tareas</h2>
-    <input type="text" id="descripcion" placeholder="Descripción de la tarea" />
-    <input type="text" id="para" placeholder="¿Para quién es?" />
-    <input type="text" id="autor" placeholder="¿Quién la escribió?" />
-    <input type="date" id="fecha" />
-    <button id="btnAgregarTarea">Agregar Tarea</button>
-    <div id="adminTasks"></div>
-    <button id="logoutBtn">Salir del Panel</button>
-  </div>
+    <input type="text" id="descripcion" placeholder="Descripción de la tarea" aria-label="Descripción de la tarea" />
+    <input type="text" id="para" placeholder="¿Para quién es?" aria-label="Para quién es la tarea" />
+    <input type="text" id="autor" placeholder="¿Quién la escribió?" aria-label="Autor de la tarea" />
+    <input type="date" id="fecha" aria-label="Fecha de la tarea" />
+    <button id="btnAgregarTarea" aria-live="polite" aria-atomic="true">Agregar Tarea</button>
+    <div id="adminTasks" aria-label="Lista de tareas para administrar"></div>
+    <button id="logoutBtn" aria-label="Cerrar sesión en el panel de administración">Salir del Panel</button>
+  </section>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
@@ -238,7 +366,7 @@
     let isAdmin = false;
     let editandoId = null;
 
-    // --- LocalStorage keys
+    // LocalStorage keys
     const LS_CONFIRMADAS = "tareas_confirmadas";
     const LS_TEXTOS = "tareas_textos";
 
@@ -264,11 +392,11 @@
       localStorage.setItem(LS_TEXTOS, JSON.stringify(obj));
     }
 
-    // Alternar confirmación de tarea (solo permite confirmar, no desconfirmar)
+    // Alternar confirmación de tarea (solo permitir confirmar)
     function toggleConfirmacion(id) {
       let confirmadas = leerConfirmadas();
       if (confirmadas.includes(id)) {
-        return true; // ya confirmada
+        return true;
       } else {
         confirmadas.push(id);
         guardarConfirmadas(confirmadas);
@@ -276,13 +404,148 @@
       }
     }
 
+    // Renderizar tareas públicas
+    async function mostrarTareas(target = "taskList", adminMode = false) {
+      const container = target === "adminTasks" ? adminTasks : taskList;
+      container.innerHTML = "";
+      const confirmadas = leerConfirmadas();
+      const textosLocal = leerTextos();
+
+      try {
+        const querySnapshot = await getDocs(collection(db, "tareas"));
+        if (querySnapshot.empty) {
+          container.innerHTML = `<p style="text-align:center; color:#666;">No hay tareas aún.</p>`;
+          return;
+        }
+        querySnapshot.forEach(docSnap => {
+          const tarea = docSnap.data();
+          const id = docSnap.id;
+          const confirmado = confirmadas.includes(id);
+          const textoExtra = textosLocal[id] || "";
+
+          if (adminMode) {
+            // Render admin cards con botones editar/eliminar
+            const card = document.createElement("div");
+            card.className = "task-card confirmed";
+            card.innerHTML = `
+              <div class="task-desc">${tarea.descripcion}</div>
+              <div class="task-meta">Para: ${tarea.para} | Fecha: ${tarea.fecha} | Autor: ${tarea.autor}</div>
+              <div class="task-comment">${textoExtra || "<i>Sin comentarios</i>"}</div>
+              <button class="btn-edit" aria-label="Editar tarea">✏️</button>
+              <button class="btn-delete" aria-label="Eliminar tarea">🗑️</button>
+            `;
+            container.appendChild(card);
+
+            // Editar
+            card.querySelector(".btn-edit").onclick = () => {
+              editandoId = id;
+              document.getElementById("descripcion").value = tarea.descripcion;
+              document.getElementById("para").value = tarea.para;
+              document.getElementById("fecha").value = tarea.fecha;
+              document.getElementById("autor").value = tarea.autor;
+              document.getElementById("btnAgregarTarea").textContent = "Guardar Cambios";
+            };
+
+            // Eliminar
+            card.querySelector(".btn-delete").onclick = async () => {
+              if (confirm("¿Eliminar esta tarea? Esta acción no se puede deshacer.")) {
+                await deleteDoc(doc(db, "tareas", id));
+                mostrarTareas("adminTasks", true);
+              }
+            };
+          } else {
+            // Render público
+            const card = document.createElement("div");
+            card.className = confirmado ? "task-card confirmed" : "task-card not-confirmed";
+            card.setAttribute("tabindex", "0");
+            card.setAttribute("role", "button");
+            card.setAttribute("aria-pressed", confirmado.toString());
+            card.innerHTML = `
+              <div class="task-desc">${tarea.descripcion}</div>
+              <div class="task-meta">Para: ${tarea.para} | Fecha: ${tarea.fecha} | Autor: ${tarea.autor}</div>
+              <div class="task-comment">${textoExtra || "<i>Sin comentarios</i>"}</div>
+            `;
+            container.appendChild(card);
+
+            if (!confirmado) {
+              card.onclick = () => {
+                if (toggleConfirmacion(id)) {
+                  card.classList.remove("not-confirmed");
+                  card.classList.add("confirmed");
+                  card.setAttribute("aria-pressed", "true");
+                }
+              };
+              card.onkeypress = (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  card.click();
+                  e.preventDefault();
+                }
+              };
+            }
+          }
+        });
+      } catch (error) {
+        container.innerHTML = `<p style="color:#f44336; text-align:center;">Error cargando tareas.</p>`;
+        console.error(error);
+      }
+    }
+
+    // Limpia formulario admin
+    function limpiarFormulario() {
+      document.getElementById("descripcion").value = "";
+      document.getElementById("para").value = "";
+      document.getElementById("fecha").value = "";
+      document.getElementById("autor").value = "";
+      editandoId = null;
+      btnAgregarTarea.textContent = "Agregar Tarea";
+    }
+
+    btnAgregarTarea.addEventListener("click", async () => {
+      const descripcion = document.getElementById("descripcion").value.trim();
+      const para = document.getElementById("para").value.trim();
+      const fecha = document.getElementById("fecha").value;
+      const autor = document.getElementById("autor").value.trim();
+
+      if (!descripcion || !para || !fecha || !autor) {
+        alert("Por favor completa todos los campos.");
+        return;
+      }
+
+      try {
+        if (editandoId) {
+          // Actualizar tarea
+          await updateDoc(doc(db, "tareas", editandoId), {
+            descripcion, para, fecha, autor
+          });
+          editandoId = null;
+          btnAgregarTarea.textContent = "Agregar Tarea";
+        } else {
+          // Agregar tarea nueva
+          await addDoc(collection(db, "tareas"), {
+            descripcion,
+            para,
+            fecha,
+            autor
+          });
+        }
+        limpiarFormulario();
+        mostrarTareas("adminTasks", true);
+      } catch (error) {
+        alert("Error al guardar la tarea. Inténtalo de nuevo.");
+        console.error(error);
+      }
+    });
+
     btnMostrarLogin.addEventListener("click", () => {
-      loginForm.style.display = "block";
+      loginForm.style.display = "flex";
+      loginForm.focus();
+      btnMostrarLogin.setAttribute("aria-expanded", "true");
       btnSoyPadre.style.display = "none";
     });
 
     btnCerrarLogin.addEventListener("click", () => {
       loginForm.style.display = "none";
+      btnMostrarLogin.setAttribute("aria-expanded", "false");
       if (!isAdmin) btnSoyPadre.style.display = "block";
     });
 
@@ -292,9 +555,11 @@
       if (user === "Admin" && pass === "familia2025") {
         isAdmin = true;
         loginForm.style.display = "none";
-        adminPanel.style.display = "block";
+        adminPanel.style.display = "flex";
+        adminPanel.focus();
         mostrarTareas("adminTasks", true);
         btnSoyPadre.style.display = "none";
+        limpiarFormulario();
       } else {
         alert("Credenciales incorrectas.");
       }
@@ -304,269 +569,15 @@
       isAdmin = false;
       adminPanel.style.display = "none";
       btnSoyPadre.style.display = "block";
-      mostrarTareas(); // Vista pública
+      mostrarTareas();
       editandoId = null;
       btnAgregarTarea.textContent = "Agregar Tarea";
       limpiarFormulario();
     });
 
-    btnAgregarTarea.addEventListener("click", async () => {
-      const descripcion = document.getElementById("descripcion").value.trim();
-      const para = document.getElementById("para").value.trim();
-      const fecha = document.getElementById("fecha").value;
-      const autor = document.getElementById("autor").value.trim();
+    // Cargar tareas al iniciar (modo público)
+    mostrarTareas();
 
-      if (!descripcion || !para || !fecha || !autor) {
-        alert("Completa todos los campos");
-        return;
-      }
-
-      if (editandoId) {
-        // Editar tarea
-        await updateDoc(doc(db, "tareas", editandoId), {
-          descripcion, para, fecha, autor
-        });
-        alert("Tarea actualizada.");
-        editandoId = null;
-        btnAgregarTarea.textContent = "Agregar Tarea";
-      } else {
-        // Crear nueva tarea
-        await addDoc(collection(db, "tareas"), {
-          descripcion, para, fecha, autor
-        });
-        alert("Tarea agregada con éxito.");
-      }
-
-      limpiarFormulario();
-      mostrarTareas("adminTasks", true);
-      mostrarTareas();
-    });
-
-    function limpiarFormulario() {
-      document.getElementById("descripcion").value = "";
-      document.getElementById("para").value = "";
-      document.getElementById("fecha").value = "";
-      document.getElementById("autor").value = "";
-    }
-
-    // Función para crear y mostrar las tareas
-    async function mostrarTareas(destino = "taskList", mostrarEliminar = false) {
-      const lista = document.getElementById(destino);
-      lista.innerHTML = "";
-
-      const confirmadas = leerConfirmadas();
-      const textos = leerTextos();
-
-      const querySnapshot = await getDocs(collection(db, "tareas"));
-
-      if (querySnapshot.empty) {
-        lista.innerHTML = '<p style="text-align:center; color:#888;">No hay tareas aún.</p>';
-        return;
-      }
-
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-
-        // Crear contenedor tarea
-        const div = document.createElement("div");
-        div.className = "task-card";
-
-        // Contenido visible de la tarea
-        div.innerHTML = `
-          <strong>Descripción:</strong> ${data.descripcion}<br>
-          <span class="task-info"><strong>Para:</strong> ${data.para} | <strong>Fecha:</strong> ${data.fecha} | <strong>Escrito por:</strong> ${data.autor}</span>
-        `;
-
-        // Confirmación
-        if (confirmadas.includes(docSnap.id)) {
-          div.classList.add("confirmed");
-          div.title = "Tarea confirmada como hecha. No puede editarse.";
-
-          // Mostrar textarea y botón enviar arriba (deshabilitados)
-          const containerInputEnviar = document.createElement("div");
-          containerInputEnviar.className = "input-enviar-container";
-          containerInputEnviar.style.display = "flex";
-
-          const textarea = document.createElement("textarea");
-          textarea.placeholder = "Escribe un comentario breve...";
-          textarea.value = textos[docSnap.id] || "";
-          textarea.disabled = true;
-          containerInputEnviar.appendChild(textarea);
-
-          const btnEnviar = document.createElement("button");
-          btnEnviar.textContent = "Enviar";
-          btnEnviar.disabled = true;
-          containerInputEnviar.appendChild(btnEnviar);
-
-          lista.appendChild(containerInputEnviar);
-          lista.appendChild(div);
-
-          // Mostrar el texto guardado debajo
-          if (textos[docSnap.id]) {
-            const pTexto = document.createElement("p");
-            pTexto.textContent = textos[docSnap.id];
-            pTexto.style.background = "#3a3a57";
-            pTexto.style.padding = "6px 10px";
-            pTexto.style.borderRadius = "5px";
-            pTexto.style.whiteSpace = "pre-wrap";
-            pTexto.style.margin = "8px 0 0 0";
-            div.appendChild(pTexto);
-          }
-
-        } else {
-          div.classList.add("not-confirmed");
-          div.title = "Tarea no confirmada. Haz click para marcar como hecha.";
-
-          // Contenedor para el input y botón enviar que se mostrará arriba de la tarea
-          const containerInputEnviar = document.createElement("div");
-          containerInputEnviar.className = "input-enviar-container";
-          containerInputEnviar.style.display = "none"; // Oculto inicialmente
-
-          const textarea = document.createElement("textarea");
-          textarea.placeholder = "Escribe un comentario breve...";
-          textarea.value = textos[docSnap.id] || "";
-          containerInputEnviar.appendChild(textarea);
-
-          const btnEnviar = document.createElement("button");
-          btnEnviar.textContent = "Enviar";
-          btnEnviar.disabled = textarea.value.trim().length === 0;
-          containerInputEnviar.appendChild(btnEnviar);
-
-          lista.appendChild(containerInputEnviar);
-          lista.appendChild(div);
-
-          // Mostrar texto guardado si existe y la tarea no está confirmada
-          if (textos[docSnap.id]) {
-            const pTexto = document.createElement("p");
-            pTexto.textContent = textos[docSnap.id];
-            pTexto.style.background = "#3a3a57";
-            pTexto.style.padding = "6px 10px";
-            pTexto.style.borderRadius = "5px";
-            pTexto.style.whiteSpace = "pre-wrap";
-            pTexto.style.margin = "8px 0 0 0";
-            div.appendChild(pTexto);
-          }
-
-          // Manejar clic para confirmar tarea (solo confirmar)
-          div.addEventListener("click", () => {
-            const ahoraConfirmada = toggleConfirmacion(docSnap.id);
-            if (ahoraConfirmada) {
-              div.classList.remove("not-confirmed");
-              div.classList.add("confirmed");
-              div.title = "Tarea confirmada como hecha. No puede editarse.";
-
-              // Mostrar textarea y botón arriba habilitados para primer comentario
-              containerInputEnviar.style.display = "flex";
-              textarea.value = textos[docSnap.id] || "";
-              textarea.disabled = false;
-              btnEnviar.disabled = textarea.value.trim().length === 0;
-            }
-          });
-
-          // Activar/desactivar botón enviar según textarea
-          textarea.addEventListener("input", () => {
-            btnEnviar.disabled = textarea.value.trim().length === 0;
-          });
-
-          // Al presionar enviar, guardar texto y mostrarlo bajo la tarea
-          btnEnviar.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const texto = textarea.value.trim();
-            if (!texto) return;
-
-            // Guardar texto en localStorage
-            const textosAct = leerTextos();
-            textosAct[docSnap.id] = texto;
-            guardarTextos(textosAct);
-
-            // Actualizar el párrafo o crearlo si no existe
-            let pTexto = div.querySelector("p");
-            if (!pTexto) {
-              pTexto = document.createElement("p");
-              div.appendChild(pTexto);
-            }
-            pTexto.textContent = texto;
-            pTexto.style.background = "#3a3a57";
-            pTexto.style.padding = "6px 10px";
-            pTexto.style.borderRadius = "5px";
-            pTexto.style.whiteSpace = "pre-wrap";
-            pTexto.style.margin = "8px 0 0 0";
-
-            // Deshabilitar textarea y botón para bloquear más cambios
-            textarea.disabled = true;
-            btnEnviar.disabled = true;
-          });
-        }
-
-        if (mostrarEliminar) {
-          // Botón eliminar (admin)
-          const btnEliminar = document.createElement("button");
-          btnEliminar.textContent = "×";
-          btnEliminar.title = "Eliminar tarea";
-          btnEliminar.classList.add("delete-btn");
-          btnEliminar.style.position = "absolute";
-          btnEliminar.style.top = "10px";
-          btnEliminar.style.right = "10px";
-          btnEliminar.style.background = "#e53935";
-          btnEliminar.style.color = "#fff";
-          btnEliminar.style.borderRadius = "50%";
-          btnEliminar.style.width = "30px";
-          btnEliminar.style.height = "30px";
-          btnEliminar.style.border = "none";
-          btnEliminar.style.cursor = "pointer";
-          btnEliminar.style.fontWeight = "bold";
-          btnEliminar.style.opacity = "0.85";
-          btnEliminar.style.transition = "opacity 0.2s ease";
-          btnEliminar.onmouseenter = () => btnEliminar.style.opacity = "1";
-          btnEliminar.onmouseleave = () => btnEliminar.style.opacity = "0.85";
-
-          btnEliminar.onclick = async (e) => {
-            e.stopPropagation();
-            if (confirm("¿Seguro quieres eliminar esta tarea?")) {
-              await deleteDoc(doc(db, "tareas", docSnap.id));
-              mostrarTareas("adminTasks", true);
-              mostrarTareas();
-            }
-          };
-          div.appendChild(btnEliminar);
-
-          // Botón editar (admin)
-          const btnEditar = document.createElement("button");
-          btnEditar.textContent = "✎";
-          btnEditar.title = "Editar tarea";
-          btnEditar.classList.add("edit-btn");
-          btnEditar.style.position = "absolute";
-          btnEditar.style.top = "10px";
-          btnEditar.style.right = "45px";
-          btnEditar.style.background = "#ffd54f";
-          btnEditar.style.color = "#121212";
-          btnEditar.style.borderRadius = "50%";
-          btnEditar.style.width = "30px";
-          btnEditar.style.height = "30px";
-          btnEditar.style.border = "none";
-          btnEditar.style.cursor = "pointer";
-          btnEditar.style.fontWeight = "bold";
-          btnEditar.style.opacity = "0.85";
-          btnEditar.style.transition = "opacity 0.2s ease";
-          btnEditar.onmouseenter = () => btnEditar.style.opacity = "1";
-          btnEditar.onmouseleave = () => btnEditar.style.opacity = "0.85";
-
-          btnEditar.onclick = (e) => {
-            e.stopPropagation();
-            editandoId = docSnap.id;
-            document.getElementById("descripcion").value = data.descripcion;
-            document.getElementById("para").value = data.para;
-            document.getElementById("fecha").value = data.fecha;
-            document.getElementById("autor").value = data.autor;
-            btnAgregarTarea.textContent = "Guardar Cambios";
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          };
-          div.appendChild(btnEditar);
-        }
-      });
-    }
-
-    mostrarTareas(); // Carga inicial pública
   </script>
 </body>
 </html>
