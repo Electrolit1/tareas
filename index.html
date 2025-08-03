@@ -4,11 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tareas del Hogar</title>
-
-  <!-- Manifest para PWA -->
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#2196f3" />
-
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -83,61 +78,94 @@
       background: #2196f3;
       color: white;
       cursor: pointer;
-      font-weight: bold;
+      font-weight: 600;
       transition: background-color 0.3s ease;
     }
     button:disabled {
       background: #555;
-      cursor: not-allowed;
+      cursor: default;
     }
-    /* Botones de eliminar y editar en las tareas */
-    .delete-btn, .edit-btn {
+    button:hover:enabled {
+      background: #1976d2;
+    }
+    #logoutBtn {
+      background: #e53935;
+      margin-top: 15px;
+    }
+    #logoutBtn:hover {
+      background: #b71c1c;
+    }
+    #btnSoyPadre {
+      text-align: center;
+      margin-top: 30px;
+    }
+    #btnSoyPadre button {
+      width: auto;
+      padding: 12px 25px;
+      font-size: 1.1rem;
+    }
+    .task-card button {
       position: absolute;
       top: 10px;
+      right: 10px;
+      background: #e53935;
       border-radius: 50%;
       width: 30px;
       height: 30px;
+      color: white;
       border: none;
       font-weight: bold;
+      cursor: pointer;
       opacity: 0.85;
       transition: opacity 0.2s ease;
-      cursor: pointer;
+      user-select: none;
     }
-    .delete-btn {
-      right: 10px;
-      background: #e53935;
-      color: #fff;
-    }
-    .delete-btn:hover {
+    .task-card button:hover {
       opacity: 1;
+      background: #b71c1c;
     }
-    .edit-btn {
+    .task-card button.edit-btn {
       right: 45px;
       background: #ffd54f;
       color: #121212;
+      font-weight: bold;
     }
-    .edit-btn:hover {
-      opacity: 1;
-    }
-    /* Contenedor del textarea y botón enviar arriba de la tarea */
-    .container-input-enviar {
-      display: none;
+    .input-enviar-container {
+      max-width: 600px;
+      margin: 10px auto 0 auto;
+      padding: 10px 15px;
+      background: #2c2c44;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+      display: flex;
       gap: 10px;
-      margin-bottom: 10px;
+      opacity: 0;
+      animation: fadeIn 0.4s ease forwards;
+      max-width: 600px;
     }
-    .container-input-enviar textarea {
+    .input-enviar-container textarea {
       flex-grow: 1;
+      height: 40px;
       resize: vertical;
-      min-height: 50px;
+      font-size: 0.9rem;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #2196f3;
+      background: #3a3a57;
+      color: #eee;
     }
-    .container-input-enviar button {
-      flex-shrink: 0;
-      width: 80px;
+    .input-enviar-container textarea:disabled {
+      background: #2a4d2a;
+      color: #a5d6a7;
+    }
+    .input-enviar-container button {
+      width: 100px;
+      padding: 10px 5px;
+      font-weight: 600;
     }
     @keyframes fadeIn {
-      to {
-        opacity: 1;
-      }
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
@@ -146,31 +174,35 @@
 
   <div id="taskList"></div>
 
-  <div style="text-align: center; margin-top: 20px;">
-    <button onclick="showLogin()">👤 Soy Padre</button>
+  <div id="btnSoyPadre" style="text-align:center; margin-top: 20px;">
+    <button id="btnMostrarLogin">👤 Soy Padre</button>
   </div>
 
   <div id="loginForm">
     <h2>🔐 Iniciar sesión</h2>
-    <input type="text" id="username" placeholder="Usuario"/>
-    <input type="password" id="password" placeholder="Contraseña"/>
-    <button onclick="login()">Entrar</button>
+    <input type="text" id="username" placeholder="Usuario" autocomplete="username" />
+    <input type="password" id="password" placeholder="Contraseña" autocomplete="current-password" />
+    <button id="btnLogin">Entrar</button>
+    <button id="btnCerrarLogin" style="background:#e53935; margin-top:10px;">Cerrar</button>
   </div>
 
   <div id="adminPanel">
     <h2>👨‍👩‍👧‍👦 Panel de Tareas</h2>
-    <input type="text" id="descripcion" placeholder="Descripción de la tarea" autocomplete="off" />
-    <input type="text" id="para" placeholder="¿Para quién es?" autocomplete="off" />
-    <input type="text" id="autor" placeholder="¿Quién la escribió?" autocomplete="off" />
+    <input type="text" id="descripcion" placeholder="Descripción de la tarea" />
+    <input type="text" id="para" placeholder="¿Para quién es?" />
+    <input type="text" id="autor" placeholder="¿Quién la escribió?" />
     <input type="date" id="fecha" />
-    <button id="btnAgregarTarea" onclick="agregarTarea()">Agregar Tarea</button>
+    <button id="btnAgregarTarea">Agregar Tarea</button>
     <div id="adminTasks"></div>
-    <button id="logoutBtn" onclick="logout()">Salir del Panel</button>
+    <button id="logoutBtn">Salir del Panel</button>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+    import {
+      getFirestore, collection, addDoc, getDocs,
+      deleteDoc, doc, updateDoc
+    } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyA1LqppWSU8KGVNw9xbkFkU1BJLAw0EdUo",
@@ -185,202 +217,95 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // DOM elements
+    const btnMostrarLogin = document.getElementById("btnMostrarLogin");
+    const loginForm = document.getElementById("loginForm");
+    const btnCerrarLogin = document.getElementById("btnCerrarLogin");
+    const btnLogin = document.getElementById("btnLogin");
+    const btnSoyPadre = document.getElementById("btnSoyPadre");
+    const adminPanel = document.getElementById("adminPanel");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const btnAgregarTarea = document.getElementById("btnAgregarTarea");
+    const taskList = document.getElementById("taskList");
+    const adminTasks = document.getElementById("adminTasks");
+
     let isAdmin = false;
     let editandoId = null;
 
-    // Texto confirmado por usuario, guardado localmente
-    function leerConfirmaciones() {
-      return JSON.parse(localStorage.getItem("confirmaciones") || "{}");
-    }
-    function guardarConfirmaciones(obj) {
-      localStorage.setItem("confirmaciones", JSON.stringify(obj));
+    // --- LocalStorage keys
+    const LS_CONFIRMADAS = "tareas_confirmadas";
+    const LS_TEXTOS = "tareas_textos";
+
+    // Leer confirmadas de localStorage
+    function leerConfirmadas() {
+      const data = localStorage.getItem(LS_CONFIRMADAS);
+      return data ? JSON.parse(data) : [];
     }
 
-    // Textos adicionales por usuario, guardados localmente
+    // Guardar confirmadas en localStorage
+    function guardarConfirmadas(arr) {
+      localStorage.setItem(LS_CONFIRMADAS, JSON.stringify(arr));
+    }
+
+    // Leer textos de localStorage
     function leerTextos() {
-      return JSON.parse(localStorage.getItem("textosConfirmacion") || "{}");
+      const data = localStorage.getItem(LS_TEXTOS);
+      return data ? JSON.parse(data) : {};
     }
+
+    // Guardar textos en localStorage
     function guardarTextos(obj) {
-      localStorage.setItem("textosConfirmacion", JSON.stringify(obj));
+      localStorage.setItem(LS_TEXTOS, JSON.stringify(obj));
     }
 
-    // Alternar confirmacion si no está confirmada
+    // Alternar confirmación de tarea (MODIFICADO para NO permitir desconfirmar)
     function toggleConfirmacion(id) {
-      const conf = leerConfirmaciones();
-      if (conf[id]) return false; // ya confirmada, no permitir cambiar
-      conf[id] = true;
-      guardarConfirmaciones(conf);
-      return true;
-    }
-
-    // Mostrar tareas, público o admin
-    async function mostrarTareas(destino = "taskList", mostrarEliminar = false) {
-      const lista = document.getElementById(destino);
-      lista.innerHTML = "";
-
-      const textos = leerTextos();
-      const confirmaciones = leerConfirmaciones();
-
-      const querySnapshot = await getDocs(collection(db, "tareas"));
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        const id = docSnap.id;
-
-        // Crear contenedor para cada tarea
-        const div = document.createElement("div");
-        div.className = "task-card";
-
-        // Estilos según confirmación
-        if (confirmaciones[id]) {
-          div.classList.add("confirmed");
-          div.title = "Tarea confirmada como hecha. No puede editarse.";
-        } else {
-          div.classList.add("not-confirmed");
-          div.title = "Tarea sin confirmar (clic para confirmar).";
-        }
-
-        // Contenido de la tarea
-        div.innerHTML = `
-          <strong>${data.descripcion}</strong><br>
-          Para: ${data.para}<br>
-          Fecha: ${data.fecha}<br>
-          Escrito por: ${data.autor}
-        `;
-
-        // Crear contenedor para textarea + botón enviar arriba de la tarea
-        const containerInputEnviar = document.createElement("div");
-        containerInputEnviar.className = "container-input-enviar";
-
-        const textarea = document.createElement("textarea");
-        textarea.placeholder = "Escribe un comentario si la hiciste (max 200 caracteres)...";
-        textarea.maxLength = 200;
-        textarea.value = textos[id] || "";
-
-        const btnEnviar = document.createElement("button");
-        btnEnviar.textContent = "Enviar";
-        btnEnviar.disabled = true;
-
-        containerInputEnviar.appendChild(textarea);
-        containerInputEnviar.appendChild(btnEnviar);
-
-        // Mostrar textarea y botón sólo si tarea NO confirmada y acaba de confirmar
-        if (confirmaciones[id]) {
-          containerInputEnviar.style.display = "none"; // ya no puede editar
-        } else {
-          containerInputEnviar.style.display = "none"; // se mostrará al confirmar
-        }
-
-        // Mostrar texto guardado debajo si existe
-        if (textos[id]) {
-          const pTexto = document.createElement("p");
-          pTexto.textContent = textos[id];
-          pTexto.style.background = "#3a3a57";
-          pTexto.style.padding = "6px 10px";
-          pTexto.style.borderRadius = "5px";
-          pTexto.style.whiteSpace = "pre-wrap";
-          pTexto.style.margin = "8px 0 0 0";
-          div.appendChild(pTexto);
-        }
-
-        // Clic para confirmar tarea (solo si no confirmada)
-        div.addEventListener("click", () => {
-          if (confirmaciones[id]) return; // ya confirmada, no hacer nada
-          const ahoraConfirmada = toggleConfirmacion(id);
-          if (ahoraConfirmada) {
-            div.classList.remove("not-confirmed");
-            div.classList.add("confirmed");
-            div.title = "Tarea confirmada como hecha. No puede editarse.";
-
-            containerInputEnviar.style.display = "flex";
-            textarea.disabled = false;
-            textarea.value = "";
-            btnEnviar.disabled = true;
-            textarea.focus();
-          }
-        });
-
-        // Activar botón enviar si hay texto
-        textarea.addEventListener("input", () => {
-          btnEnviar.disabled = textarea.value.trim().length === 0;
-        });
-
-        // Enviar comentario
-        btnEnviar.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const texto = textarea.value.trim();
-          if (!texto) return;
-
-          // Guardar texto localmente
-          const textosAct = leerTextos();
-          textosAct[id] = texto;
-          guardarTextos(textosAct);
-
-          // Mostrar texto debajo tarea
-          let pTexto = div.querySelector("p");
-          if (!pTexto) {
-            pTexto = document.createElement("p");
-            div.appendChild(pTexto);
-          }
-          pTexto.textContent = texto;
-          pTexto.style.background = "#3a3a57";
-          pTexto.style.padding = "6px 10px";
-          pTexto.style.borderRadius = "5px";
-          pTexto.style.whiteSpace = "pre-wrap";
-          pTexto.style.margin = "8px 0 0 0";
-
-          // Deshabilitar textarea y botón para bloquear más cambios
-          textarea.disabled = true;
-          btnEnviar.disabled = true;
-        });
-
-        // Insertar el containerInputEnviar arriba del contenido
-        div.prepend(containerInputEnviar);
-
-        // Botones eliminar y editar (solo admin)
-        if (mostrarEliminar) {
-          // Botón eliminar
-          const btnEliminar = document.createElement("button");
-          btnEliminar.textContent = "×";
-          btnEliminar.title = "Eliminar tarea";
-          btnEliminar.classList.add("delete-btn");
-          btnEliminar.onclick = async (e) => {
-            e.stopPropagation();
-            if (confirm("¿Seguro quieres eliminar esta tarea?")) {
-              await deleteDoc(doc(db, "tareas", id));
-              mostrarTareas("adminTasks", true);
-              mostrarTareas();
-            }
-          };
-          div.appendChild(btnEliminar);
-
-          // Botón editar
-          const btnEditar = document.createElement("button");
-          btnEditar.textContent = "✎";
-          btnEditar.title = "Editar tarea";
-          btnEditar.classList.add("edit-btn");
-          btnEditar.onclick = (e) => {
-            e.stopPropagation();
-            editandoId = id;
-            document.getElementById("descripcion").value = data.descripcion;
-            document.getElementById("para").value = data.para;
-            document.getElementById("fecha").value = data.fecha;
-            document.getElementById("autor").value = data.autor;
-            document.getElementById("btnAgregarTarea").textContent = "Guardar Cambios";
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          };
-          div.appendChild(btnEditar);
-        }
-
-        lista.appendChild(div);
-      });
-
-      if (lista.innerHTML.trim() === "") {
-        lista.innerHTML = '<p style="text-align:center; color:#888;">No hay tareas aún.</p>';
+      let confirmadas = leerConfirmadas();
+      if (confirmadas.includes(id)) {
+        // No permitir desconfirmar
+        return true;
+      } else {
+        confirmadas.push(id);
+        guardarConfirmadas(confirmadas);
+        return true;
       }
     }
 
-    // Agregar o guardar cambios en tarea (admin)
-    async function agregarTarea() {
+    btnMostrarLogin.addEventListener("click", () => {
+      loginForm.style.display = "block";
+      btnSoyPadre.style.display = "none";
+    });
+
+    btnCerrarLogin.addEventListener("click", () => {
+      loginForm.style.display = "none";
+      if (!isAdmin) btnSoyPadre.style.display = "block";
+    });
+
+    btnLogin.addEventListener("click", () => {
+      const user = document.getElementById("username").value.trim();
+      const pass = document.getElementById("password").value.trim();
+      if (user === "Admin" && pass === "familia2025") {
+        isAdmin = true;
+        loginForm.style.display = "none";
+        adminPanel.style.display = "block";
+        mostrarTareas("adminTasks", true);
+        btnSoyPadre.style.display = "none";
+      } else {
+        alert("Credenciales incorrectas.");
+      }
+    });
+
+    logoutBtn.addEventListener("click", () => {
+      isAdmin = false;
+      adminPanel.style.display = "none";
+      btnSoyPadre.style.display = "block";
+      mostrarTareas(); // Vista pública
+      editandoId = null;
+      btnAgregarTarea.textContent = "Agregar Tarea";
+      limpiarFormulario();
+    });
+
+    btnAgregarTarea.addEventListener("click", async () => {
       const descripcion = document.getElementById("descripcion").value.trim();
       const para = document.getElementById("para").value.trim();
       const fecha = document.getElementById("fecha").value;
@@ -392,61 +317,245 @@
       }
 
       if (editandoId) {
-        // Guardar cambios
+        // Editar tarea
         await updateDoc(doc(db, "tareas", editandoId), {
           descripcion, para, fecha, autor
         });
-        alert("Tarea actualizada correctamente.");
+        alert("Tarea actualizada.");
         editandoId = null;
-        document.getElementById("btnAgregarTarea").textContent = "Agregar Tarea";
+        btnAgregarTarea.textContent = "Agregar Tarea";
       } else {
-        // Agregar nueva tarea
+        // Crear nueva tarea
         await addDoc(collection(db, "tareas"), {
           descripcion, para, fecha, autor
         });
-        alert("Tarea agregada correctamente.");
+        alert("Tarea agregada con éxito.");
       }
 
-      // Limpiar inputs
+      limpiarFormulario();
+      mostrarTareas("adminTasks", true);
+      mostrarTareas();
+    });
+
+    function limpiarFormulario() {
       document.getElementById("descripcion").value = "";
       document.getElementById("para").value = "";
       document.getElementById("fecha").value = "";
       document.getElementById("autor").value = "";
-
-      mostrarTareas("adminTasks", true);
-      mostrarTareas();
     }
 
-    function showLogin() {
-      document.getElementById("loginForm").style.display = "block";
-    }
+    // Carga tareas (público o admin)
+    async function mostrarTareas(destino = "taskList", mostrarEliminar = false) {
+      const lista = document.getElementById(destino);
+      lista.innerHTML = "";
 
-    function login() {
-      const user = document.getElementById("username").value;
-      const pass = document.getElementById("password").value;
-      if (user === "Admin" && pass === "familia2025") {
-        isAdmin = true;
-        document.getElementById("loginForm").style.display = "none";
-        document.getElementById("adminPanel").style.display = "block";
-        mostrarTareas("adminTasks", true);
-      } else {
-        alert("Credenciales incorrectas.");
+      const confirmadas = leerConfirmadas();
+      const textos = leerTextos();
+
+      const querySnapshot = await getDocs(collection(db, "tareas"));
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+
+        // Crear contenedor tarea
+        const div = document.createElement("div");
+        div.className = "task-card";
+
+        // Estado confirmación
+        if (confirmadas.includes(docSnap.id)) {
+          div.classList.add("confirmed");
+          div.title = "Tarea confirmada como hecha. No puede editarse.";
+
+          // Mostrar textarea y botón enviar arriba (deshabilitados)
+          const containerInputEnviar = document.createElement("div");
+          containerInputEnviar.className = "input-enviar-container";
+          containerInputEnviar.style.display = "flex";
+
+          const textarea = document.createElement("textarea");
+          textarea.placeholder = "Escribe un comentario breve...";
+          textarea.value = textos[docSnap.id] || "";
+          textarea.disabled = true;
+          containerInputEnviar.appendChild(textarea);
+
+          const btnEnviar = document.createElement("button");
+          btnEnviar.textContent = "Enviar";
+          btnEnviar.disabled = true;
+          containerInputEnviar.appendChild(btnEnviar);
+
+          lista.appendChild(containerInputEnviar);
+          lista.appendChild(div);
+
+          // Mostrar el texto guardado debajo
+          if (textos[docSnap.id]) {
+            const pTexto = document.createElement("p");
+            pTexto.textContent = textos[docSnap.id];
+            pTexto.style.background = "#3a3a57";
+            pTexto.style.padding = "6px 10px";
+            pTexto.style.borderRadius = "5px";
+            pTexto.style.whiteSpace = "pre-wrap";
+            pTexto.style.margin = "8px 0 0 0";
+            div.appendChild(pTexto);
+          }
+
+          // No se añade listener para cambiar confirmación, ya está bloqueado
+
+        } else {
+          div.classList.add("not-confirmed");
+          div.title = "Tarea no confirmada. Haz click para marcar como hecha.";
+
+          // Contenedor para el input y botón enviar que se mostrará arriba de la tarea
+          const containerInputEnviar = document.createElement("div");
+          containerInputEnviar.className = "input-enviar-container";
+          containerInputEnviar.style.display = "none"; // Oculto inicialmente
+
+          const textarea = document.createElement("textarea");
+          textarea.placeholder = "Escribe un comentario breve...";
+          textarea.value = textos[docSnap.id] || "";
+          containerInputEnviar.appendChild(textarea);
+
+          const btnEnviar = document.createElement("button");
+          btnEnviar.textContent = "Enviar";
+          btnEnviar.disabled = textarea.value.trim().length === 0;
+          containerInputEnviar.appendChild(btnEnviar);
+
+          lista.appendChild(containerInputEnviar);
+          lista.appendChild(div);
+
+          // Mostrar texto guardado si existe y la tarea no está confirmada
+          if (textos[docSnap.id]) {
+            const pTexto = document.createElement("p");
+            pTexto.textContent = textos[docSnap.id];
+            pTexto.style.background = "#3a3a57";
+            pTexto.style.padding = "6px 10px";
+            pTexto.style.borderRadius = "5px";
+            pTexto.style.whiteSpace = "pre-wrap";
+            pTexto.style.margin = "8px 0 0 0";
+            div.appendChild(pTexto);
+          }
+
+          // Manejar clic para confirmar/desconfirmar tarea (solo confirmar)
+          div.addEventListener("click", () => {
+            const ahoraConfirmada = toggleConfirmacion(docSnap.id);
+            if (ahoraConfirmada) {
+              div.classList.remove("not-confirmed");
+              div.classList.add("confirmed");
+              div.title = "Tarea confirmada como hecha. No puede editarse.";
+
+              // Mostrar textarea y boton arriba habilitados para primer comentario
+              containerInputEnviar.style.display = "flex";
+              textarea.value = textos[docSnap.id] || "";
+              textarea.disabled = false;
+              btnEnviar.disabled = textarea.value.trim().length === 0;
+            }
+          });
+
+          // Activar/desactivar botón enviar según textarea
+          textarea.addEventListener("input", () => {
+            btnEnviar.disabled = textarea.value.trim().length === 0;
+          });
+
+          // Al presionar enviar, guardar texto y mostrarlo bajo la tarea
+          btnEnviar.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const texto = textarea.value.trim();
+            if (!texto) return;
+
+            // Guardar texto en localStorage
+            const textosAct = leerTextos();
+            textosAct[docSnap.id] = texto;
+            guardarTextos(textosAct);
+
+            // Actualizar el párrafo o crearlo si no existe
+            let pTexto = div.querySelector("p");
+            if (!pTexto) {
+              pTexto = document.createElement("p");
+              div.appendChild(pTexto);
+            }
+            pTexto.textContent = texto;
+            pTexto.style.background = "#3a3a57";
+            pTexto.style.padding = "6px 10px";
+            pTexto.style.borderRadius = "5px";
+            pTexto.style.whiteSpace = "pre-wrap";
+            pTexto.style.margin = "8px 0 0 0";
+
+            // Deshabilitar textarea y botón para bloquear más cambios
+            textarea.disabled = true;
+            btnEnviar.disabled = true;
+          });
+        }
+
+        if (mostrarEliminar) {
+          // Botón eliminar (admin)
+          const btnEliminar = document.createElement("button");
+          btnEliminar.textContent = "×";
+          btnEliminar.title = "Eliminar tarea";
+          btnEliminar.classList.add("delete-btn");
+          btnEliminar.style.position = "absolute";
+          btnEliminar.style.top = "10px";
+          btnEliminar.style.right = "10px";
+          btnEliminar.style.background = "#e53935";
+          btnEliminar.style.color = "#fff";
+          btnEliminar.style.borderRadius = "50%";
+          btnEliminar.style.width = "30px";
+          btnEliminar.style.height = "30px";
+          btnEliminar.style.border = "none";
+          btnEliminar.style.cursor = "pointer";
+          btnEliminar.style.fontWeight = "bold";
+          btnEliminar.style.opacity = "0.85";
+          btnEliminar.style.transition = "opacity 0.2s ease";
+          btnEliminar.onmouseenter = () => btnEliminar.style.opacity = "1";
+          btnEliminar.onmouseleave = () => btnEliminar.style.opacity = "0.85";
+
+          btnEliminar.onclick = async (e) => {
+            e.stopPropagation();
+            if (confirm("¿Seguro quieres eliminar esta tarea?")) {
+              await deleteDoc(doc(db, "tareas", docSnap.id));
+              mostrarTareas("adminTasks", true);
+              mostrarTareas();
+            }
+          };
+          div.appendChild(btnEliminar);
+
+          // Botón editar (admin)
+          const btnEditar = document.createElement("button");
+          btnEditar.textContent = "✎";
+          btnEditar.title = "Editar tarea";
+          btnEditar.classList.add("edit-btn");
+          btnEditar.style.position = "absolute";
+          btnEditar.style.top = "10px";
+          btnEditar.style.right = "45px";
+          btnEditar.style.background = "#ffd54f";
+          btnEditar.style.color = "#121212";
+          btnEditar.style.borderRadius = "50%";
+          btnEditar.style.width = "30px";
+          btnEditar.style.height = "30px";
+          btnEditar.style.border = "none";
+          btnEditar.style.cursor = "pointer";
+          btnEditar.style.fontWeight = "bold";
+          btnEditar.style.opacity = "0.85";
+          btnEditar.style.transition = "opacity 0.2s ease";
+          btnEditar.onmouseenter = () => btnEditar.style.opacity = "1";
+          btnEditar.onmouseleave = () => btnEditar.style.opacity = "0.85";
+
+          btnEditar.onclick = (e) => {
+            e.stopPropagation();
+            editandoId = docSnap.id;
+            document.getElementById("descripcion").value = data.descripcion;
+            document.getElementById("para").value = data.para;
+            document.getElementById("fecha").value = data.fecha;
+            document.getElementById("autor").value = data.autor;
+            btnAgregarTarea.textContent = "Guardar Cambios";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          };
+          div.appendChild(btnEditar);
+        }
+      });
+
+      if (lista.innerHTML.trim() === "") {
+        lista.innerHTML = '<p style="text-align:center; color:#888;">No hay tareas aún.</p>';
       }
     }
 
-    function logout() {
-      isAdmin = false;
-      document.getElementById("adminPanel").style.display = "none";
-    }
-
-    mostrarTareas(); // carga inicial pública
-
-    // Registro del Service Worker para PWA
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./service-worker.js')
-        .then(() => console.log('Service Worker registrado'))
-        .catch(err => console.error('Error registrando Service Worker:', err));
-    }
+    mostrarTareas(); // Carga inicial pública
   </script>
 </body>
 </html>
