@@ -3,18 +3,253 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tareas del Hogar - Público</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Tareas del Hogar</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #121212;
+      color: white;
+      padding: 20px;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #00bcd4;
+    }
+    .task-card {
+      background: #1e1e1e;
+      border-left: 5px solid #00bcd4;
+      margin: 10px auto;
+      padding: 15px;
+      border-radius: 8px;
+      max-width: 600px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+      position: relative;
+      word-wrap: break-word;
+    }
+    .task-card strong {
+      color: #ffcc00;
+    }
+    #loginForm, #adminPanel {
+      display: none;
+      max-width: 400px;
+      margin: 20px auto;
+      background: #1b1b1b;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.7);
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 5px;
+      border: none;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    input {
+      background: #2a2a2a;
+      color: white;
+      border: 1px solid #00bcd4;
+    }
+    input:focus {
+      outline: none;
+      border-color: #ffcc00;
+    }
+    button {
+      background: #00bcd4;
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background: #0097a7;
+    }
+    #logoutBtn {
+      background: #e53935;
+      margin-top: 15px;
+    }
+    #logoutBtn:hover {
+      background: #b71c1c;
+    }
+    #btnSoyPadre {
+      text-align: center;
+      margin-top: 30px;
+    }
+    #btnSoyPadre button {
+      width: auto;
+      padding: 12px 25px;
+      font-size: 1.1rem;
+    }
+    .task-card button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #e53935;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      opacity: 0.85;
+      transition: opacity 0.2s ease;
+    }
+    .task-card button:hover {
+      opacity: 1;
+      background: #b71c1c;
+    }
+  </style>
 </head>
 <body>
   <h1>📋 Tareas del Hogar</h1>
+
   <div id="taskList"></div>
 
+  <div id="btnSoyPadre" style="text-align:center; margin-top: 20px;">
+    <button id="btnMostrarLogin">👤 Soy Padre</button>
+  </div>
+
+  <div id="loginForm">
+    <h2>🔐 Iniciar sesión</h2>
+    <input type="text" id="username" placeholder="Usuario" autocomplete="username" />
+    <input type="password" id="password" placeholder="Contraseña" autocomplete="current-password" />
+    <button id="btnLogin">Entrar</button>
+    <button id="btnCerrarLogin" style="background:#e53935; margin-top:10px;">Cerrar</button>
+  </div>
+
+  <div id="adminPanel">
+    <h2>👨‍👩‍👧‍👦 Panel de Tareas</h2>
+    <input type="text" id="descripcion" placeholder="Descripción de la tarea" />
+    <input type="text" id="para" placeholder="¿Para quién es?" />
+    <input type="text" id="autor" placeholder="¿Quién la escribió?" />
+    <input type="date" id="fecha" />
+    <button id="btnAgregarTarea">Agregar Tarea</button>
+    <div id="adminTasks"></div>
+    <button id="logoutBtn">Salir del Panel</button>
+  </div>
+
   <script type="module">
-    import { mostrarTareas } from './main.js';
-    window.addEventListener('DOMContentLoaded', () => {
-      mostrarTareas(); // Solo mostrar lista pública sin botones
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA1LqppWSU8KGVNw9xbkFkU1BJLAw0EdUo",
+      authDomain: "tareas-542bb.firebaseapp.com",
+      projectId: "tareas-542bb",
+      storageBucket: "tareas-542bb.appspot.com",
+      messagingSenderId: "774046945636",
+      appId: "1:774046945636:web:c26868684cfdd9acd66a71",
+      measurementId: "G-JF2V8974BX"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const btnMostrarLogin = document.getElementById("btnMostrarLogin");
+    const loginForm = document.getElementById("loginForm");
+    const btnCerrarLogin = document.getElementById("btnCerrarLogin");
+    const btnLogin = document.getElementById("btnLogin");
+    const btnSoyPadre = document.getElementById("btnSoyPadre");
+    const adminPanel = document.getElementById("adminPanel");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const btnAgregarTarea = document.getElementById("btnAgregarTarea");
+    const taskList = document.getElementById("taskList");
+    const adminTasks = document.getElementById("adminTasks");
+
+    let isAdmin = false;
+
+    btnMostrarLogin.addEventListener("click", () => {
+      loginForm.style.display = "block";
+      btnSoyPadre.style.display = "none";
     });
+
+    btnCerrarLogin.addEventListener("click", () => {
+      loginForm.style.display = "none";
+      if (!isAdmin) btnSoyPadre.style.display = "block";
+    });
+
+    btnLogin.addEventListener("click", () => {
+      const user = document.getElementById("username").value.trim();
+      const pass = document.getElementById("password").value.trim();
+      if (user === "Admin" && pass === "familia2025") {
+        isAdmin = true;
+        loginForm.style.display = "none";
+        adminPanel.style.display = "block";
+        mostrarTareas("adminTasks", true);
+        btnSoyPadre.style.display = "none";
+      } else {
+        alert("Credenciales incorrectas.");
+      }
+    });
+
+    logoutBtn.addEventListener("click", () => {
+      isAdmin = false;
+      adminPanel.style.display = "none";
+      btnSoyPadre.style.display = "block";
+      mostrarTareas(); // Mostrar solo lista pública
+    });
+
+    btnAgregarTarea.addEventListener("click", async () => {
+      const descripcion = document.getElementById("descripcion").value.trim();
+      const para = document.getElementById("para").value.trim();
+      const fecha = document.getElementById("fecha").value;
+      const autor = document.getElementById("autor").value.trim();
+
+      if (!descripcion || !para || !fecha || !autor) {
+        alert("Completa todos los campos");
+        return;
+      }
+
+      await addDoc(collection(db, "tareas"), {
+        descripcion, para, fecha, autor
+      });
+
+      mostrarTareas("adminTasks", true);
+
+      // Limpiar inputs
+      document.getElementById("descripcion").value = "";
+      document.getElementById("para").value = "";
+      document.getElementById("fecha").value = "";
+      document.getElementById("autor").value = "";
+    });
+
+    async function mostrarTareas(destino = "taskList", mostrarEliminar = false) {
+      const lista = document.getElementById(destino);
+      lista.innerHTML = "";
+      const querySnapshot = await getDocs(collection(db, "tareas"));
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const div = document.createElement("div");
+        div.className = "task-card";
+        div.innerHTML = `
+          <strong>${data.descripcion}</strong><br>
+          Para: ${data.para}<br>
+          Fecha: ${data.fecha}<br>
+          Escrito por: ${data.autor}
+        `;
+        if (mostrarEliminar) {
+          const btn = document.createElement("button");
+          btn.textContent = "×";
+          btn.title = "Eliminar tarea";
+          btn.onclick = async () => {
+            if (confirm("¿Seguro quieres eliminar esta tarea?")) {
+              await deleteDoc(doc(db, "tareas", docSnap.id));
+              mostrarTareas("adminTasks", true);
+              mostrarTareas();
+            }
+          };
+          div.appendChild(btn);
+        }
+        lista.appendChild(div);
+      });
+    }
+
+    // Mostrar lista pública al cargar página
+    mostrarTareas();
   </script>
 </body>
 </html>
