@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tareas del Hogar</title>
+
+  <!-- Manifest para PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#2196f3" />
+
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -154,10 +159,10 @@
 
   <div id="adminPanel">
     <h2>👨‍👩‍👧‍👦 Panel de Tareas</h2>
-    <input type="text" id="descripcion" placeholder="Descripción de la tarea">
-    <input type="text" id="para" placeholder="¿Para quién es?">
-    <input type="text" id="autor" placeholder="¿Quién la escribió?">
-    <input type="date" id="fecha">
+    <input type="text" id="descripcion" placeholder="Descripción de la tarea" autocomplete="off" />
+    <input type="text" id="para" placeholder="¿Para quién es?" autocomplete="off" />
+    <input type="text" id="autor" placeholder="¿Quién la escribió?" autocomplete="off" />
+    <input type="date" id="fecha" />
     <button id="btnAgregarTarea" onclick="agregarTarea()">Agregar Tarea</button>
     <div id="adminTasks"></div>
     <button id="logoutBtn" onclick="logout()">Salir del Panel</button>
@@ -202,7 +207,7 @@
     // Alternar confirmacion si no está confirmada
     function toggleConfirmacion(id) {
       const conf = leerConfirmaciones();
-      if (conf[id]) return false; // ya confirmada, no permitir desconfirmar
+      if (conf[id]) return false; // ya confirmada, no permitir cambiar
       conf[id] = true;
       guardarConfirmaciones(conf);
       return true;
@@ -219,11 +224,11 @@
       const querySnapshot = await getDocs(collection(db, "tareas"));
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
+        const id = docSnap.id;
 
         // Crear contenedor para cada tarea
         const div = document.createElement("div");
         div.className = "task-card";
-        const id = docSnap.id;
 
         // Estilos según confirmación
         if (confirmaciones[id]) {
@@ -258,11 +263,11 @@
         containerInputEnviar.appendChild(textarea);
         containerInputEnviar.appendChild(btnEnviar);
 
-        // Mostrar textarea y botón sólo si tarea confirmada y no editable ya
+        // Mostrar textarea y botón sólo si tarea NO confirmada y acaba de confirmar
         if (confirmaciones[id]) {
           containerInputEnviar.style.display = "none"; // ya no puede editar
         } else {
-          containerInputEnviar.style.display = "none"; // se muestra solo al confirmar
+          containerInputEnviar.style.display = "none"; // se mostrará al confirmar
         }
 
         // Mostrar texto guardado debajo si existe
@@ -279,7 +284,7 @@
 
         // Clic para confirmar tarea (solo si no confirmada)
         div.addEventListener("click", () => {
-          if (confirmaciones[id]) return; // ya confirmada, no hace nada
+          if (confirmaciones[id]) return; // ya confirmada, no hacer nada
           const ahoraConfirmada = toggleConfirmacion(id);
           if (ahoraConfirmada) {
             div.classList.remove("not-confirmed");
@@ -328,7 +333,7 @@
           btnEnviar.disabled = true;
         });
 
-        // Append containerInputEnviar arriba del contenido
+        // Insertar el containerInputEnviar arriba del contenido
         div.prepend(containerInputEnviar);
 
         // Botones eliminar y editar (solo admin)
@@ -435,6 +440,13 @@
     }
 
     mostrarTareas(); // carga inicial pública
+
+    // Registro del Service Worker para PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(() => console.log('Service Worker registrado'))
+        .catch(err => console.error('Error registrando Service Worker:', err));
+    }
   </script>
 </body>
 </html>
