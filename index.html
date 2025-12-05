@@ -4,62 +4,16 @@
 <title>Panel de Tareas</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-    body {
-        margin: 0;
-        font-family: Arial;
-        background: #121212;
-        color: white;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-    }
-
-    .container {
-        background: #1f1f1f;
-        padding: 30px;
-        border-radius: 12px;
-        width: 350px;
-        box-shadow: 0px 0px 10px #00000060;
-    }
-
-    h2 {
-        text-align: center;
-        margin-bottom: 20px;
-    }
-
-    input {
-        width: 100%;
-        padding: 10px;
-        margin: 6px 0;
-        border-radius: 6px;
-        border: none;
-        background: #2b2b2b;
-        color: white;
-    }
-
-    button {
-        width: 100%;
-        padding: 10px;
-        background: #00a8ff;
-        color: white;
-        border: none;
-        margin-top: 8px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: bold;
-    }
-
-    button:hover {
-        background: #007acc;
-    }
-
-    .divider {
-        margin: 20px 0;
-        font-size: 14px;
-        text-align: center;
-        opacity: .5;
-    }
+    body { margin: 0; font-family: Arial; background: #121212; color: white;
+        display: flex; justify-content: center; align-items: center; height: 100vh; }
+    .container { background: #1f1f1f; padding: 30px; border-radius: 12px; width: 350px;
+        box-shadow: 0px 0px 10px #00000060; }
+    input { width: 100%; padding: 10px; margin: 6px 0; border-radius: 6px; border: none;
+        background: #2b2b2b; color: white; }
+    button { width: 100%; padding: 10px; background: #00a8ff; border: none; margin-top: 8px;
+        border-radius: 6px; cursor: pointer; font-weight: bold; }
+    button:hover { background: #007acc; }
+    .divider { text-align: center; opacity: .5; margin: 20px 0; }
 </style>
 </head>
 <body>
@@ -71,7 +25,7 @@
     <input id="regPass" type="password" placeholder="Contraseña">
     <button onclick="registrarse()">Registrarme</button>
 
-    <div class="divider">──────────</div>
+    <div class="divider">─────────────</div>
 
     <h2>Iniciar Sesión</h2>
     <input id="logNick" placeholder="Nick">
@@ -80,56 +34,9 @@
 
 </div>
 
-<!-- Firebase v9 -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-  import { getFirestore, setDoc, getDoc, doc } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyAbkpn2i02BQ4EdbxPRmjMTiJb_U32noZA",
-    authDomain: "respuestas-a0c38.firebaseapp.com",
-    databaseURL: "https://respuestas-a0c38-default-rtdb.firebaseio.com",
-    projectId: "respuestas-a0c38",
-    storageBucket: "respuestas-a0c38.firebasestorage.app",
-    messagingSenderId: "694006707121",
-    appId: "1:694006707121:web:79267ca0496b935bd88390",
-    measurementId: "G-FLNG6V9KMK"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  async function registrarse() {
-    const nick = document.getElementById("regNick").value.trim();
-    const pass = document.getElementById("regPass").value.trim();
-
-    if (!nick || !pass) return alert("Completa todos los campos");
-
-    const ref = doc(db, "usuarios", nick);
-    const userSnap = await getDoc(ref);
-
-    if (userSnap.exists()) return alert("❌ Ese usuario ya existe");
-
-    await setDoc(ref, { pass });
-
-    sessionStorage.setItem("usuario", nick);
-    window.location = "app.html";
-  }
-
-  async function login() {
-    const nick = document.getElementById("logNick").value.trim();
-    const pass = document.getElementById("logPass").value.trim();
-
-    const ref = doc(db, "usuarios", nick);
-    const userSnap = await getDoc(ref);
-
-    if (!userSnap.exists() || userSnap.data().pass !== pass)
-      return alert("❌ Usuario o contraseña incorrectos");
-
-    sessionStorage.setItem("usuario", nick);
-    window.location = "app.html";
-  }
-</script>
+<!-- Firebase -->
+<script type="module" src="firebase.js"></script>
+<script type="module" src="auth.js"></script>
 
 </body>
 </html>
