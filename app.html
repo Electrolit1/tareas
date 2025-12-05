@@ -1,10 +1,26 @@
-<h2>Tareas</h2>
-<input id="tarea" placeholder="Escribir tarea">
-<button onclick="crearTarea()">Agregar</button>
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mis Tareas</title>
+<style>
+    body { background:#121212; color:white; font-family:Arial; margin:0; padding:20px; }
+    input { padding:10px; width:60%; border:none; border-radius:6px; background:#2b2b2b; color:white; }
+    button { padding:10px; border:none; background:#00a8ff; color:white; border-radius:6px; cursor:pointer; }
+    .task { background:#1f1f1f; padding:12px; border-radius:8px; margin:8px 0; display:flex; justify-content:space-between; }
+    .done { text-decoration: line-through; opacity:.5; }
+</style>
+</head>
+<body>
 
-<ul id="lista"></ul>
+<h2 id="titulo"></h2>
 
-<script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore.js"></script>
-<script src="firebase.js"></script>
-<script src="app.js"></script>
+<input id="tareaInput" placeholder="Escribe una tarea...">
+<button onclick="agregarTarea()">Agregar</button>
+
+<div id="lista"></div>
+
+<script type="module" src="firebase.js"></script>
+<script type="module" src="tasks.js"></script>
+
+</body>
+</html>
