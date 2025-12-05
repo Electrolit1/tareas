@@ -4,78 +4,54 @@
 <title>Login / Registro</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-    body {
-        margin: 0;
-        font-family: Arial;
-        background: #121212;
-        color: white;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-    }
-
-    .container {
-        background: #1f1f1f;
-        padding: 30px;
-        border-radius: 14px;
-        width: 350px;
-        text-align: center;
-        box-shadow: 0px 0px 10px #00000060;
-    }
-
-    input, button {
-        width: 100%;
-        padding: 10px;
-        margin: 6px 0;
-        border-radius: 6px;
-        border: none;
-    }
-
-    input {
-        background: #2b2b2b;
-        color: white;
-    }
-
-    button {
-        background: #00a8ff;
-        color: white;
-        cursor: pointer;
-        font-weight: bold;
-    }
-
-    button:hover {
-        background: #007acc;
-    }
-
-    .divider {
-        margin: 15px 0;
-        opacity: .5;
-    }
+body {
+    background:#111;
+    font-family:Arial;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    color:white;
+}
+.container {
+    background:#1e1e1e;
+    padding:20px;
+    width:350px;
+    border-radius:10px;
+    text-align:center;
+}
+input, button {
+    width:100%;
+    padding:10px;
+    margin-top:6px;
+    border:none;
+    border-radius:6px;
+}
+input { background:#2b2b2b; color:white; }
+button { background:#00a8ff; color:white; font-weight:bold; cursor:pointer; }
+button:hover { background:#0081c9; }
 </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Registro</h2>
-    <input id="regNick" placeholder="Nick">
-    <input id="regPass" type="password" placeholder="Contraseña">
-    <button onclick="registrarse()">Registrarme</button>
+  <h2>Registro</h2>
+  <input id="regNick" placeholder="Nick">
+  <input id="regPass" type="password" placeholder="Contraseña">
+  <button onclick="registrarse()">Registrarme</button>
 
-    <div class="divider">──────────</div>
-
-    <h2>Iniciar Sesión</h2>
-    <input id="logNick" placeholder="Nick">
-    <input id="logPass" type="password" placeholder="Contraseña">
-    <button onclick="login()">Entrar</button>
+  <h2>Iniciar Sesión</h2>
+  <input id="logNick" placeholder="Nick">
+  <input id="logPass" type="password" placeholder="Contraseña">
+  <button onclick="login()">Entrar</button>
 </div>
 
 <script type="module">
-    import { registrarse, login } from "./login.js";
-
-    window.registrarse = registrarse;
-    window.login = login;
+   import { registrarse, login } from "./auth.js";
+   window.registrarse = registrarse;
+   window.login = login;
 </script>
 
 </body>
 </html>
+
