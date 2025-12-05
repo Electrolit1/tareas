@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Panel de Tareas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="background:#101010; color:white; font-family:Arial;">
+
+<h2>Panel | Crear Tareas</h2>
+
+<input id="tareaTexto" placeholder="Descripción de la tarea" style="width:250px;">
+<button onclick="crearTarea()">Agregar</button>
+
+<div id="lista"></div>
+
+<script type="module">
+import { db } from "./firebase.js";
+import {
+  addDoc,
+  collection,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore.js";
+
+const usuario = sessionStorage.getItem("usuario");
+if (!usuario) location.href = "index.html";
+
+async function cargarTareas() {
+  const query = await getDocs(collection(db, "tareas"));
+  const lista = document.getElementById("lista");
+  lista.innerHTML = "";
+  query.forEach(docu => {
+    const d = docu.data();
+    lista.innerHTML += `
+      <div style='margin-top:10px'>
+        ${d.texto} — <b>${d.autor}</b>
+        <button onclick="eliminar('${docu.id}')">❌</button>
+      </div>`;
+  });
+}
+
+export async function crearTarea() {
+  const texto = document.getElementById("tareaTexto").value.trim();
+  if (!texto) return;
+
+  await addDoc(collection(db, "tareas"), {
+    texto,
+    autor: usuario,
+    completado: false
+  });
+
+  cargarTareas();
+}
+
+export async function eliminar(id) {
+  await deleteDoc(doc(db, "tareas", id));
+  cargarTareas();
+}
+
+window.crearTarea = crearTarea;
+window.eliminar = eliminar;
+
+cargarTareas();
+</script>
+
+</body>
+</html>
