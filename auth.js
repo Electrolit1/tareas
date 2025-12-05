@@ -1,0 +1,37 @@
+// auth.js
+import { db } from "./firebase.js";
+import {
+  setDoc,
+  getDoc,
+  doc
+} from "https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore.js";
+
+export async function registrarse() {
+  const nick = document.getElementById("regNick").value.trim();
+  const pass = document.getElementById("regPass").value.trim();
+
+  if (!nick || !pass) return alert("Completa todos los campos.");
+
+  const ref = doc(db, "usuarios", nick);
+  const snap = await getDoc(ref);
+
+  if (snap.exists()) return alert("Ese usuario ya existe");
+
+  await setDoc(ref, { pass });
+  sessionStorage.setItem("usuario", nick);
+  window.location = "panel.html";
+}
+
+export async function login() {
+  const nick = document.getElementById("logNick").value.trim();
+  const pass = document.getElementById("logPass").value.trim();
+
+  const ref = doc(db, "usuarios", nick);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists() || snap.data().pass !== pass)
+    return alert("Usuario o contraseña incorrectos");
+
+  sessionStorage.setItem("usuario", nick);
+  window.location = "panel.html";
+}
