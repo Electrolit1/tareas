@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login / Registro</title>
+</head>
+<body>
+<h2>Registro</h2>
+<input id="regNick" placeholder="Nick">
+<input id="regPass" type="password" placeholder="Contraseña">
+<button onclick="registrarse()">Registrarme</button>
+
+<h2>Ya estoy registrado</h2>
+<input id="logNick" placeholder="Nick">
+<input id="logPass" type="password" placeholder="Contraseña">
+<button onclick="login()">Entrar</button>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore.js"></script>
+<script src="firebase.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
