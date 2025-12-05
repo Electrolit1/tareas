@@ -1,4 +1,6 @@
-// VERSION PARA USAR CON SCRIPT NORMAL EN HTML (SIN IMPORT)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyAbkpn2i02BQ4EdbxPRmjMTiJb_U32noZA",
   authDomain: "respuestas-a0c38.firebaseapp.com",
@@ -10,8 +12,5 @@ const firebaseConfig = {
   measurementId: "G-FLNG6V9KMK"
 };
 
-// Inicializar Firebase
-firebase.initializeApp(firebaseConfig);
-
-// Firestore
-const db = firebase.firestore();
+export const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
